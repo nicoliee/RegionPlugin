@@ -8,6 +8,9 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -37,6 +40,55 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
             if (region != null && region.isInside(event.getBlock().getLocation())) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes colocar bloques en esta región.");
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBlockBreak(BlockBreakEvent event) {
+        String worldName = event.getBlock().getWorld().getName();
+        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
+
+        if (isProtectionActive != null && isProtectionActive) {
+            Region region = plugin.getRegions().get(worldName);
+
+            if (region != null && region.isInside(event.getBlock().getLocation())) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes romper bloques en esta región.");
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPistonExtend(BlockPistonExtendEvent event) {
+        String worldName = event.getBlock().getWorld().getName();
+        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
+
+        if (isProtectionActive != null && isProtectionActive) {
+            Region region = plugin.getRegions().get(worldName);
+
+            for (org.bukkit.block.Block block : event.getBlocks()) {
+                if (region != null && region.isInside(block.getLocation())) {
+                    event.setCancelled(true);
+                    break;
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPistonRetract(BlockPistonRetractEvent event) {
+        String worldName = event.getBlock().getWorld().getName();
+        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
+
+        if (isProtectionActive != null && isProtectionActive) {
+            Region region = plugin.getRegions().get(worldName);
+
+            for (org.bukkit.block.Block block : event.getBlocks()) {
+                if (region != null && region.isInside(block.getLocation())) {
+                    event.setCancelled(true);
+                    break;
+                }
             }
         }
     }
