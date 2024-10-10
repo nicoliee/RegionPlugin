@@ -16,13 +16,23 @@ public class RegionPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // Cargar el archivo de configuración predeterminado
         saveDefaultConfig();
+
+        // Cargar las regiones definidas en el config.yml
         loadRegions();
+
+        // Crear una instancia del listener que manejará la lógica de protección y comandos
         RegionProtectionListener listener = new RegionProtectionListener(this);
+
+        // Registrar los eventos de protección de regiones
         Bukkit.getPluginManager().registerEvents(listener, this);
-        this.getCommand("startProtection").setExecutor(listener);
+
+        // Registrar el comando /torneo
+        this.getCommand("torneo").setExecutor(listener);
     }
 
+    // Método para cargar las regiones desde el archivo de configuración
     private void loadRegions() {
         FileConfiguration config = getConfig();
         Set<String> worlds = config.getKeys(false);
@@ -39,6 +49,7 @@ public class RegionPlugin extends JavaPlugin {
         }
     }
 
+    // Método para convertir una cadena de ubicación en un objeto Location
     private Location parseLocation(String worldName, String locString) {
         String[] parts = locString.replace("(", "").replace(")", "").split(",");
         World world = Bukkit.getWorld(worldName);
@@ -48,6 +59,7 @@ public class RegionPlugin extends JavaPlugin {
                 Double.parseDouble(parts[2]));
     }
 
+    // Método para obtener el mapa de regiones
     public Map<String, Region> getRegions() {
         return regions;
     }

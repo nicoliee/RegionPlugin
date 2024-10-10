@@ -4,7 +4,7 @@ main: org.ttchampagne.regionplugin.RegionPlugin
 description: A plugin to prevent block placement in specified regions for 5 minutes
 
 commands:
-  startProtection:
-    description: Starts the block placement protection for the current world
-  stopProtection:
-    description: Stops the block placement protection for the current world
+  torneo:
+    description: Ejecuta comandos del torneo o maneja la protección de colocación de bloques
+    usage: /torneo [on|off]
+

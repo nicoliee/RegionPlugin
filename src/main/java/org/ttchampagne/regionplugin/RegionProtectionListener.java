@@ -5,16 +5,13 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.BlockPistonExtendEvent;
-import org.bukkit.event.block.BlockPistonRetractEvent;
-import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class RegionProtectionListener implements Listener, CommandExecutor {
@@ -25,89 +22,60 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
 
     public RegionProtectionListener(RegionPlugin plugin) {
         this.plugin = plugin;
-        plugin.getCommand("startProtection").setExecutor(this);
-        plugin.getCommand("stopProtection").setExecutor(this);
-    }
-
-    @EventHandler
-    public void onBlockPlace(BlockPlaceEvent event) {
-        String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-
-        if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-
-            if (region != null && region.isInside(event.getBlock().getLocation())) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes colocar bloques en esta región.");
-            }
-        }
-    }
-
-    @EventHandler
-    public void onBlockBreak(BlockBreakEvent event) {
-        String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-
-        if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-
-            if (region != null && region.isInside(event.getBlock().getLocation())) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes romper bloques en esta región.");
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPistonExtend(BlockPistonExtendEvent event) {
-        String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-
-        if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-
-            for (org.bukkit.block.Block block : event.getBlocks()) {
-                if (region != null && region.isInside(block.getLocation())) {
-                    event.setCancelled(true);
-                    break;
-                }
-            }
-        }
-    }
-
-    @EventHandler
-    public void onPistonRetract(BlockPistonRetractEvent event) {
-        String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-
-        if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-
-            for (org.bukkit.block.Block block : event.getBlocks()) {
-                if (region != null && region.isInside(block.getLocation())) {
-                    event.setCancelled(true);
-                    break;
-                }
-            }
-        }
+        plugin.getCommand("torneo").setExecutor(this);
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
-            String worldName = player.getWorld().getName();
+        if (command.getName().equalsIgnoreCase("torneo")) {
+            if (sender instanceof Player) {
+                Player player = (Player) sender;
 
-            if (label.equalsIgnoreCase("startProtection")) {
-                startProtectionTimer(worldName, player);
-                return true;
-            } else if (label.equalsIgnoreCase("stopProtection")) {
-                stopProtectionTimer(worldName, player);
+                // Verificar si el jugador es OP
+                if (!player.isOp()) {
+                    player.sendMessage(ChatColor.RED + "No tienes permiso para usar este comando.");
+                    return true;  // Se detiene la ejecución si no es OP
+                }
+
+                String worldName = player.getWorld().getName();
+
+                if (args.length == 0) {
+                    // Ejecutar comandos del torneo desde el archivo de configuración
+                    executeTournamentCommands(player);
+                    return true;
+                } else if (args.length == 1) {
+                    // Manejar /torneo on/off para la protección de bloques
+                    if (args[0].equalsIgnoreCase("on")) {
+                        startProtectionTimer(worldName, player);
+                        return true;
+                    } else if (args[0].equalsIgnoreCase("off")) {
+                        stopProtectionTimer(worldName, player);
+                        return true;
+                    } else {
+                        player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo on o /torneo off.");
+                    }
+                } else {
+                    player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo o /torneo on/off.");
+                }
+            } else {
+                sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
                 return true;
             }
         }
         return false;
+    }
+
+    private void executeTournamentCommands(Player player) {
+        // Obtiene la lista de comandos desde el archivo de configuración
+        FileConfiguration config = plugin.getConfig();
+        List<String> commands = config.getStringList("commands");
+
+        // Ejecuta cada comando listado en la configuración desde el contexto del jugador
+        for (String cmd : commands) {
+            player.performCommand(cmd);
+        }
+
+        player.sendMessage(ChatColor.YELLOW + "Reglas de Torneo Activadas.");
     }
 
     private void startProtectionTimer(final String worldName, Player player) {
@@ -124,30 +92,42 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
             public void run() {
                 secondsElapsed++;
 
+                // Envía mensajes a todos los jugadores en el mundo
                 if (secondsElapsed == 60) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 4 minutos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 4 minutos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 120) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 3 minutos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 3 minutos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 180) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 2 minutos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 2 minutos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 240) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Queda 1 minuto hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Queda 1 minuto hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 290) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 10 segundos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 10 segundos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 295) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 5 segundos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 5 segundos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 296) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 4 segundos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 4 segundos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 297) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 3 segundos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 3 segundos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 298) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Quedan 2 segundos hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Quedan 2 segundos hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 299) {
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "Queda 1 segundo hasta que termine el tiempo de preparación.");
+                    sendMessageToWorldPlayers(worldName, "Queda 1 segundo hasta que termine el tiempo de preparación.");
+                    playSoundToWorldPlayers(worldName);
                 } else if (secondsElapsed == 300) {
                     worldProtectionStatus.put(worldName, false);
                     protectionTimers.remove(worldName);
-                    Bukkit.broadcastMessage(ChatColor.YELLOW + "El tiempo de preparación ha terminado.");
+                    sendMessageToWorldPlayers(worldName, "El tiempo de preparación ha terminado.");
+                    playSoundToWorldPlayers(worldName);
                     this.cancel();
                 }
             }
@@ -156,6 +136,24 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         protectionTimers.put(worldName, task);
         player.sendMessage(ChatColor.YELLOW + "Protección de colocación de bloques iniciada por 5 minutos en el mundo " + worldName);
     }
+
+    private void playSoundToWorldPlayers(String worldName) {
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            if (onlinePlayer.getWorld().getName().equals(worldName)) {
+                onlinePlayer.playSound(onlinePlayer.getLocation(), "BLOCK_LEVER_CLICK", 1.0f, 1.0f);
+            }
+        }
+    }
+
+
+    private void sendMessageToWorldPlayers(String worldName, String message) {
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            if (onlinePlayer.getWorld().getName().equals(worldName)) {
+                onlinePlayer.sendMessage(ChatColor.YELLOW + message);
+            }
+        }
+    }
+
 
     private void stopProtectionTimer(final String worldName, Player player) {
         if (protectionTimers.containsKey(worldName)) {
