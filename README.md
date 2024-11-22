@@ -1,7 +1,7 @@
 # RegionPlugin
  A plugin made for [Amazing Towers](https://github.com/katanya04/The-Towers)  that implements various things like
 ## Features
-###Command Executor System
+### Command Executor System
 -Add Commands: Allows you to add multiple commands to a list for batch execution.
 -Remove Commands: Enables deleting commands from the execution list.
 -View Command List: Displays the current list of commands set to execute.
@@ -14,3 +14,5 @@
 Players receive the following effects:
 - Haste II: Lasts for 90 seconds (or the duration of preparation time if it's shorter than 90 seconds).
 - Regeneration I: Active for the entire preparation period.
+
+# This plugin is designed exclusively as a complement to Amazing Towers but can be used with other plugins if it meets the user's expectations and requirements.
