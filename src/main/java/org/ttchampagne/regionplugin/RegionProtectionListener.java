@@ -17,17 +17,43 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.command.TabCompleter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RegionProtectionListener implements Listener, CommandExecutor {
+public class RegionProtectionListener implements Listener, CommandExecutor, TabCompleter {
 
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        List<String> completions = new ArrayList<>();
+        if (command.getName().equalsIgnoreCase("torneo")) {
+            // Verificar permisos para el autocompletado
+            if (!sender.hasPermission("towers.admin") && !(sender.isOp())) {
+                return completions; // No sugerir nada si no tienen permiso
+            }
+            if (args.length == 1) {
+                // Primera palabra del comando
+                List<String> subCommands = List.of("on", "off", "lista", "delete", "add");
+                for (String subCommand : subCommands) {
+                    if (subCommand.toLowerCase().startsWith(args[0].toLowerCase())) {
+                        completions.add(subCommand);
+                    }
+                }
+            }
+        }
+        return completions;
+    }
+    
     private final RegionPlugin plugin;
+    // Mapas para almacenar el estado de protección de bloques por mundo
     private final Map<String, Boolean> worldProtectionStatus = new HashMap<>();
     private final Map<String, BukkitRunnable> protectionTimers = new HashMap<>();
+    private final Map<String, Boolean> globalProtectionStatus = new HashMap<>(); // Mapa para la protección global
     private final Map<String, Integer> protectionTimeRemaining = new HashMap<>(); // Mapa para almacenar el tiempo restante de protección de bloques
+    // Mapas para almacenar el tiempo restante de los efectos de regeneración y Haste II
     private final Map<String, Integer> regenerationTimerRemaining = new HashMap<>(); // Mapa para almacenar el tiempo restante de la regeneración
     private final Map<String, Integer> hasteTimerRemaining = new HashMap<>(); // Mapa para guardar el tiempo restante de Haste II
 
@@ -35,18 +61,27 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
     public RegionProtectionListener(RegionPlugin plugin) {
         this.plugin = plugin;
         plugin.getCommand("torneo").setExecutor(this);
+        plugin.getCommand("torneo").setTabCompleter(this);
     }
     @EventHandler
-    // Logica para la colocación y destrucción de bloques
+    // Logica para la protección de bloques
     public void onBlockPlace(BlockPlaceEvent event) {
         String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
 
+        // Verificar si la protección global está activa
+        if (globalProtectionStatus.getOrDefault(worldName, false)) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.RED + "No puedes poner bloques hasta que inicie la partida.");
+            return;
+        }
+
+        // Lógica original de protección por región
+        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
         if (isProtectionActive != null && isProtectionActive) {
             Region region = plugin.getRegions().get(worldName);
             if (region != null && region.isInside(event.getBlock().getLocation())) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes construir en tiempo de preparación");
+                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes construir en tiempo de preparación.");
             }
         }
     }
@@ -55,11 +90,18 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
     // Logica para la destrucción de bloques
     public void onBlockBreak(BlockBreakEvent event) {
         String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
 
+        // Verificar si la protección global está activa
+        if (globalProtectionStatus.getOrDefault(worldName, false)) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.RED + "No puedes romper bloques hasta que inicie la partida.");
+            return;
+        }
+
+        // Lógica original de protección por región
+        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
         if (isProtectionActive != null && isProtectionActive) {
             Region region = plugin.getRegions().get(worldName);
-
             if (region != null && region.isInside(event.getBlock().getLocation())) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes romper bloques en esta región.");
@@ -108,13 +150,11 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         String worldName = player.getWorld().getName();
-
         // Verifica si hay un valor de protección para el mundo y si está activo
         Boolean isProtectionActive = worldProtectionStatus.get(worldName);
         if (isProtectionActive == null || !isProtectionActive) {
             return; // Si no hay protección activa, no hacer nada
         }
-
         int remainingTime = protectionTimeRemaining.getOrDefault(worldName, 0);
         if (remainingTime > 0) {
             new BukkitRunnable() {
@@ -140,39 +180,54 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         if (command.getName().equalsIgnoreCase("torneo")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
+    
                 // Verificar permiso "towers.admin"
                 if (!player.hasPermission("towers.admin")) {
                     player.sendMessage(ChatColor.RED + "No tienes permiso para usar este comando.");
                     return true;
                 }
+    
                 String worldName = player.getWorld().getName();
+    
+                // Comando principal sin argumentos
                 if (args.length == 0) {
+                    globalProtectionStatus.put(worldName, true); // Activar protección global
                     executeTournamentCommands(player);
                     return true;
-                } else if (args.length == 1 || args.length == 2) {
-                    // Si el comando es "/torneo on"
-                    if (args[0].equalsIgnoreCase("on")) {
-                        int preparationTime = 180; // Valor predeterminado de 3 minutos (180 segundos)
-
-                        // Si hay un segundo argumento, intenta convertirlo a un entero para el tiempo de preparación
-                        if (args.length == 2) {
-                            try {
-                                preparationTime = Integer.parseInt(args[1]);
-                            } catch (NumberFormatException e) {
-                                player.sendMessage(ChatColor.RED + "El tiempo de preparación debe ser un número en segundos.");
-                                return true;
-                            }
-                        }
-                        startProtectionTimer(worldName, player, preparationTime);
+                }
+    
+                switch (args[0].toLowerCase()) {
+                    case "lista":
+                        listTournamentCommands(player);
                         return true;
-                    } else if (args[0].equalsIgnoreCase("off")) {
+    
+                    case "delete":
+                        if (args.length == 2) {
+                            deleteTournamentCommand(player, args[1]);
+                        } else {
+                            player.sendMessage(ChatColor.RED + "Uso incorrecto: /torneo delete {numero}");
+                        }
+                        return true;
+    
+                    case "add":
+                        if (args.length >= 2) {
+                            addTournamentCommand(player, args);
+                        } else {
+                            player.sendMessage(ChatColor.RED + "Uso incorrecto: /torneo add {comando}");
+                        }
+                        return true;
+    
+                    case "on":
+                        handleTournamentOn(player, args, worldName);
+                        return true;
+    
+                    case "off":
                         stopProtectionTimer(worldName, player);
                         return true;
-                    } else {
-                        player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo on <tiempo_en_segundos> o /torneo off.");
-                    }
-                } else {
-                    player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo o /torneo on <tiempo_en_segundos>/off.");
+    
+                    default:
+                        player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo, /torneo lista, /torneo add {comando}, o /torneo delete {numero}.");
+                        return true;
                 }
             } else {
                 sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
@@ -248,6 +303,22 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         sendMessageToWorldPlayers(worldName, "Quedan " + (preparationTime / 60) + " minutos hasta que termine el tiempo de preparación.");
     }
 
+    // Que debe pasar cuando se ejecute "/torneo off"
+    private void stopProtectionTimer(final String worldName, Player player) {
+        if (protectionTimers.containsKey(worldName)) {
+            protectionTimers.get(worldName).cancel(); // Se cancela el timer
+            protectionTimers.remove(worldName); // Se remueven el timer
+            worldProtectionStatus.put(worldName, false); // Estado False (ya no estamos en tiempo de preparación)
+            protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
+            removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
+            removeHasteEffect(worldName); // Eliminar el efecto de Haste II
+            player.sendMessage(ChatColor.YELLOW + "Protección de colocación de bloques detenida en el mundo " + worldName);
+            Bukkit.getLogger().info("La protección de colocación de bloques ha sido detenida en el mundo " + worldName);
+        } else {
+            player.sendMessage(ChatColor.YELLOW + "No se encontró protección activa en el mundo " + worldName);
+        }
+    }
+
     // Aplicar Haste 2
     private void applyHasteEffect(String worldName, int hasteDuration) {
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -291,19 +362,82 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
             }
         }
     }
-    // Que debe pasar cuando se ejecute "/torneo off"
-    private void stopProtectionTimer(final String worldName, Player player) {
-        if (protectionTimers.containsKey(worldName)) {
-            protectionTimers.get(worldName).cancel(); // Se cancela el timer
-            protectionTimers.remove(worldName); // Se remueven el timer
-            worldProtectionStatus.put(worldName, false); // Estado False (ya no estamos en tiempo de preparación)
-            protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
-            removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
-            removeHasteEffect(worldName); // Eliminar el efecto de Haste II
-            player.sendMessage(ChatColor.YELLOW + "Protección de colocación de bloques detenida en el mundo " + worldName);
-            Bukkit.getLogger().info("La protección de colocación de bloques ha sido detenida en el mundo " + worldName);
-        } else {
-            player.sendMessage(ChatColor.YELLOW + "No se encontró protección activa en el mundo " + worldName);
+
+    // Lógica para mostrar lista de comandos, añadir y remover comandos
+    // Mostrar lista de comandos del torneo
+    private void listTournamentCommands(Player player) {
+        FileConfiguration config = plugin.getConfig();
+        List<String> commands = config.getStringList("commands");
+
+        if (commands.isEmpty()) {
+            player.sendMessage(ChatColor.YELLOW + "No hay comandos configurados.");
+            return;
         }
+
+        player.sendMessage(ChatColor.YELLOW + "Comandos configurados:");
+        for (int i = 0; i < commands.size(); i++) {
+            player.sendMessage(ChatColor.GREEN + String.valueOf(i + 1) + ". " + commands.get(i));
+        }
+    }
+
+    // Eliminar un comando por su número
+    private void deleteTournamentCommand(Player player, String number) {
+        try {
+            int index = Integer.parseInt(number) - 1;
+            FileConfiguration config = plugin.getConfig();
+            List<String> commands = config.getStringList("commands");
+
+            if (index < 0 || index >= commands.size()) {
+                player.sendMessage(ChatColor.RED + "Número inválido. Usa /torneo lista para ver los números válidos.");
+                return;
+            }
+
+            String removedCommand = commands.remove(index);
+            config.set("commands", commands);
+            plugin.saveConfig();
+
+            player.sendMessage(ChatColor.GREEN + "Comando eliminado: " + removedCommand);
+        } catch (NumberFormatException e) {
+            player.sendMessage(ChatColor.RED + "Número inválido. Usa /torneo delete {numero}.");
+        }
+    }
+
+    // Añadir un nuevo comando al listado
+    private void addTournamentCommand(Player player, String[] args) {
+        FileConfiguration config = plugin.getConfig();
+        List<String> commands = config.getStringList("commands");
+
+        // Unir los argumentos como un comando
+        StringBuilder commandBuilder = new StringBuilder();
+        for (int i = 1; i < args.length; i++) {
+            commandBuilder.append(args[i]).append(" ");
+        }
+        String newCommand = commandBuilder.toString().trim();
+
+        // Agregar el comando y guardar
+        commands.add(newCommand);
+        config.set("commands", commands);
+        plugin.saveConfig();
+
+        player.sendMessage(ChatColor.GREEN + "Comando añadido: " + newCommand);
+    }
+
+    // Manejar el comando /torneo on
+    private void handleTournamentOn(Player player, String[] args, String worldName) {
+        globalProtectionStatus.remove(worldName); // Desactivar protección global
+        player.performCommand("privado"); // Ejecutar el comando "/privado"
+        int preparationTime = 180; // Valor predeterminado de 3 minutos (180 segundos)
+
+        // Si hay un segundo argumento, intentar convertirlo en tiempo de preparación
+        if (args.length >= 2) {
+            try {
+                preparationTime = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                player.sendMessage(ChatColor.RED + "El tiempo de preparación debe ser un número en segundos.");
+                return;
+            }
+        }
+
+        startProtectionTimer(worldName, player, preparationTime);
     }
 }
