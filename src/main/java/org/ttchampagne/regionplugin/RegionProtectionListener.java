@@ -225,7 +225,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         return false;
     }
 
-    // lo que debe pasar al ejecutar "/torneo"
+    // Manejar comando /torneo
     private void executeTournamentCommands(Player player) {
         // se revisa en "config.yml" los comandos que debe ejecutar el jugador
         FileConfiguration config = plugin.getConfig();
@@ -236,6 +236,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         player.sendMessage(ChatColor.YELLOW + "Reglas de Torneo Activadas.");
     }
 
+    // Iniciar la protección de bloques
     private void startProtectionTimer(final String worldName, Player player, int preparationTime) {
         if (protectionTimers.containsKey(worldName)) {
             player.sendMessage(ChatColor.YELLOW + "La protección ya está activa en este mundo.");
@@ -274,6 +275,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                     protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
                     removeHasteEffect(worldName);
                     sendMessageToWorldPlayers(worldName, "El tiempo de preparación ha terminado.");
+                    Bukkit.getLogger().info("Protección de colocación de bloques terminada en el mundo " + worldName);
                     this.cancel();
                 }
                 // Si ya pasaron 90 segundos, dejar de aplicar Haste II
@@ -286,24 +288,8 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         };
         task.runTaskTimer(plugin, 0, 20);
         protectionTimers.put(worldName, task);
-        player.sendMessage(ChatColor.YELLOW + "Protección de colocación de bloques iniciada por " + (preparationTime / 60) + " minutos en el mundo " + worldName);
+        Bukkit.getLogger().info("Protección de colocación de bloques iniciada por " + (preparationTime / 60) + " minutos en el mundo " + worldName);
         sendMessageToWorldPlayers(worldName, "Quedan " + (preparationTime / 60) + " minutos hasta que termine el tiempo de preparación.");
-    }
-
-    // Que debe pasar cuando se ejecute "/torneo off"
-    private void stopProtectionTimer(final String worldName, Player player) {
-        if (protectionTimers.containsKey(worldName)) {
-            protectionTimers.get(worldName).cancel(); // Se cancela el timer
-            protectionTimers.remove(worldName); // Se remueven el timer
-            worldProtectionStatus.put(worldName, false); // Estado False (ya no estamos en tiempo de preparación)
-            protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
-            removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
-            removeHasteEffect(worldName); // Eliminar el efecto de Haste II
-            player.sendMessage(ChatColor.YELLOW + "Protección de colocación de bloques detenida en el mundo " + worldName);
-            Bukkit.getLogger().info("La protección de colocación de bloques ha sido detenida en el mundo " + worldName);
-        } else {
-            player.sendMessage(ChatColor.YELLOW + "No se encontró protección activa en el mundo " + worldName);
-        }
     }
 
     // Aplicar Haste 2
@@ -350,8 +336,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         }
     }
 
-    // Lógica para mostrar lista de comandos, añadir y remover comandos
-    // Mostrar lista de comandos del torneo
+    // Manejar el comando /torneo lista
     private void listTournamentCommands(Player player) {
         FileConfiguration config = plugin.getConfig();
         List<String> commands = config.getStringList("commands");
@@ -367,21 +352,22 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         }
     }
 
-    // Eliminar un comando por su número
+    // Manejar el comando /torneo delete
     private void deleteTournamentCommand(Player player, String number) {
         try {
-            int index = Integer.parseInt(number) - 1;
-            FileConfiguration config = plugin.getConfig();
-            List<String> commands = config.getStringList("commands");
+            // Convertir el número a un índice
+            int index = Integer.parseInt(number) - 1; // Restar 1 para obtener el índice correcto
+            FileConfiguration config = plugin.getConfig(); // Cargar el archivo de configuración
+            List<String> commands = config.getStringList("commands"); // Obtener la lista de comandos
 
             if (index < 0 || index >= commands.size()) {
                 player.sendMessage(ChatColor.RED + "Número inválido. Usa /torneo lista para ver los números válidos.");
                 return;
             }
 
-            String removedCommand = commands.remove(index);
-            config.set("commands", commands);
-            plugin.saveConfig();
+            String removedCommand = commands.remove(index); // Eliminar el comando de la lista
+            config.set("commands", commands); // Actualizar la lista de comandos
+            plugin.saveConfig(); // Guardar el archivo de configuración
 
             player.sendMessage(ChatColor.GREEN + "Comando eliminado: " + removedCommand);
         } catch (NumberFormatException e) {
@@ -389,7 +375,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         }
     }
 
-    // Añadir un nuevo comando al listado
+    // Manejar el comando /torneo add
     private void addTournamentCommand(Player player, String[] args) {
         FileConfiguration config = plugin.getConfig();
         List<String> commands = config.getStringList("commands");
@@ -412,7 +398,11 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
     // Manejar el comando /torneo on
     private void handleTournamentOn(Player player, String[] args, String worldName) {
         globalProtectionStatus.remove(worldName); // Desactivar protección global
-        player.performCommand("privado"); // Ejecutar el comando "/privado"
+
+        // Verificar si el comando /privado on está registrado
+        if (plugin.getServer().getPluginCommand("privado") != null) {
+            player.performCommand("privado on"); // Ejecutar el comando "/privado on" solo si está el plugin "captainsForTowers" instalado
+        }
 
         // Cargar el archivo de configuración
         File configFile = new File(plugin.getDataFolder(), "config.yml");
@@ -439,6 +429,28 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         preparationTime *= 60; // Convertir minutos a segundos
         startProtectionTimer(worldName, player, preparationTime);
     }
+
+    // Manejar el comando /torneo off
+    private void stopProtectionTimer(final String worldName, Player player) {
+        // Verificar si el comando /privado on está registrado
+        if (plugin.getServer().getPluginCommand("privado") != null) {
+            player.performCommand("privado off"); // Ejecutar el comando "/privado off" solo si está el plugin "captainsForTowers" instalado
+        }
+        if (protectionTimers.containsKey(worldName)) {
+            protectionTimers.get(worldName).cancel(); // Se cancela el timer
+            protectionTimers.remove(worldName); // Se remueven el timer
+            worldProtectionStatus.put(worldName, false); // Estado False (ya no estamos en tiempo de preparación)
+            protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
+            removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
+            removeHasteEffect(worldName); // Eliminar el efecto de Haste II
+            sendMessageToWorldPlayers(worldName, "Tiempo de preparación cancelado.");
+            Bukkit.getLogger().info("La protección de colocación de bloques ha sido detenida en el mundo " + worldName);
+        } else {
+            player.sendMessage(ChatColor.YELLOW + "No se encontró protección activa en el mundo " + worldName);
+        }
+    }
+
+    // Manejar el comadno /torneo timer
     private void updatePreparationTime(int newPreparationTime, Player player, String worldName) {
         // Cargar el archivo de configuración
         File configFile = new File(plugin.getDataFolder(), "config.yml");
