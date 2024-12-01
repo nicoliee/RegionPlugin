@@ -1,5 +1,6 @@
 package org.ttchampagne.regionplugin;
 
+import org.ttchampagne.regionplugin.update.AutoUpdate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
@@ -145,7 +146,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                         applyHasteEffect(worldName, remainingHasteTime); // Aplicar el tiempo restante de Haste II
                     }
                 }
-            }.runTaskLater(plugin, 20L);
+            }.runTaskLater(plugin, 20L); // Esperar un segundo antes de aplicar los efectos
         }
     }
 
@@ -202,6 +203,14 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                     } else {
                         player.sendMessage(ChatColor.RED + "Uso incorrecto: /torneo timer {tiempo}");
                     }
+                }else if (args[0].equalsIgnoreCase("update")) { // /torneo update
+                    // Mostrar la versión actual del plugin
+                    String currentVersion = plugin.getDescription().getVersion();
+                    sender.sendMessage("§aLa versión actual de RegionPlugin es: §b" + currentVersion);
+                
+                    // Iniciar la verificación de actualizaciones
+                    AutoUpdate updateChecker = new AutoUpdate(plugin); // Si necesita el plugin como parámetro
+                    updateChecker.checkForUpdates();
                 }else if (args[0].equalsIgnoreCase("help")) { // /torneo help
                     // Mostrar la lista de comandos disponibles
                     player.sendMessage(ChatColor.YELLOW + "Comandos disponibles:");
@@ -212,7 +221,8 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                     player.sendMessage(ChatColor.GREEN + "/torneo on [tiempo]: Inicia la protección de bloques en el mundo actual.");
                     player.sendMessage(ChatColor.GREEN + "/torneo off: Detiene la protección de bloques en el mundo actual.");
                     player.sendMessage(ChatColor.GREEN + "/torneo timer {tiempo}: Actualiza el tiempo de preparación en el mundo actual.");
-                }else { //Agregar otro subcomando usando else if antes de este else
+                    player.sendMessage(ChatColor.GREEN + "/torneo update: Verifica y descarga una nueva versión del plugin.");
+                }else {
                     // Subcomando no reconocido
                     player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo help para ver los comandos disponibles.");
                 }

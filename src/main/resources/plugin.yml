@@ -1,7 +1,7 @@
 name: RegionPlugin
-version: 'v4.0.1'
+version: '${project.version}'
 main: org.ttchampagne.regionplugin.RegionPlugin
-description: A plugin to prevent block placement in specified regions for 5 minutes
+description: A plugin to prevent block placement in specified regions
 
 commands:
   torneo:

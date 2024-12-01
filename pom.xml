@@ -3,20 +3,17 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <groupId>org.TTChampagne</groupId>
   <artifactId>RegionPlugin</artifactId>
-  <version>1.0</version>
+  <version>4.2.0</version>
   <packaging>jar</packaging>
-
   <name>RegionPlugin</name>
-
   <properties>
     <java.version>1.8</java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
-
   <build>
+  <finalName>RegionPlugin</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -48,7 +45,6 @@
       </resource>
     </resources>
   </build>
-
   <repositories>
       <repository>
           <id>spigotmc-repo</id>
@@ -59,7 +55,6 @@
           <url>https://oss.sonatype.org/content/groups/public/</url>
       </repository>
   </repositories>
-
   <dependencies>
       <dependency>
           <groupId>org.spigotmc</groupId>
@@ -67,5 +62,10 @@
           <version>1.12-R0.1-SNAPSHOT</version>
           <scope>provided</scope>
       </dependency>
+            <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20210307</version>
+    </dependency> 
   </dependencies>
 </project>
