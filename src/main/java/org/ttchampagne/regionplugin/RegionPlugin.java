@@ -1,10 +1,16 @@
 package org.ttchampagne.regionplugin;
 
 import org.bukkit.Bukkit;
+
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.ttchampagne.regionplugin.commands.CapitanesCommand;
+import org.ttchampagne.regionplugin.commands.ListaCommand;
+import org.ttchampagne.regionplugin.commands.TorneoCommand;
+import org.ttchampagne.regionplugin.commands.RegionPluginCommand;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,7 +18,9 @@ import java.util.Set;
 
 public class RegionPlugin extends JavaPlugin {
 
-    private final Map<String, Region> regions = new HashMap<>();
+    private final Map<String, Region> regions = new HashMap<>(); // Mapa para almacenar las regiones definidas
+    public static boolean privadoActivado; // Variable para almacenar el estado del modo privado
+    public static String mundoPrivado; // Variable para almacenar el mundo donde se activó el modo privado
 
     @Override
     public void onEnable() {
@@ -21,11 +29,17 @@ public class RegionPlugin extends JavaPlugin {
         // Cargar las regiones definidas en el config.yml
         loadRegions();
         // Crear una instancia del listener que manejará la lógica de protección y comandos
-        RegionProtectionListener listener = new RegionProtectionListener(this);
+        TorneoCommand listener = new TorneoCommand(this);
         // Registrar los eventos de protección de regiones
         Bukkit.getPluginManager().registerEvents(listener, this);
         // Registrar el comando /torneo
         this.getCommand("torneo").setExecutor(listener);
+        this.getCommand("capitanes").setExecutor(new CapitanesCommand());
+        this.getCommand("lista").setExecutor(new ListaCommand());
+        this.getCommand("RegionPlugin").setExecutor(new RegionPluginCommand(this));
+        // Reinicio inicial de variables
+        privadoActivado = false;
+        mundoPrivado = "";
     }
     // Método para cargar las regiones desde el archivo de configuración
     private void loadRegions() {

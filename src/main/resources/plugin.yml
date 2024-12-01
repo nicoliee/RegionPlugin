@@ -7,4 +7,15 @@ commands:
   torneo:
     description: Ejecuta comandos del torneo o maneja la protección de colocación de bloques
     usage: /torneo [on|off]
+  capitanes:
+    description: Asigna capitanes a un equipo.
+    usage: /capitanes <jugador1> <jugador2> [...]
+    aliases: [captains, picks]
+  lista:
+    description: Muestra la lista de jugadores en equipos.
+    usage: /lista
+    aliases: [list]
+  RegionPlugin:
+    description: Muestra la versión del plugin
+    usage: /RegionPlugin
 

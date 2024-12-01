@@ -1,8 +1,9 @@
-package org.ttchampagne.regionplugin;
+package org.ttchampagne.regionplugin.commands;
 
-import org.ttchampagne.regionplugin.update.AutoUpdate;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -11,10 +12,15 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.ttchampagne.regionplugin.Region;
+import org.ttchampagne.regionplugin.RegionPlugin;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
@@ -25,7 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RegionProtectionListener implements Listener, CommandExecutor {
+public class TorneoCommand implements Listener, CommandExecutor {
     private final RegionPlugin plugin;
     // Mapas para almacenar el estado de protección de bloques por mundo
     private final Map<String, Boolean> worldProtectionStatus = new HashMap<>();
@@ -35,8 +41,10 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
     // Mapas para almacenar el tiempo restante de los efectos de regeneración y Haste II
     private final Map<String, Integer> regenerationTimerRemaining = new HashMap<>(); // Mapa para almacenar el tiempo restante de la regeneración
     private final Map<String, Integer> hasteTimerRemaining = new HashMap<>(); // Mapa para guardar el tiempo restante de Haste II
+    // Modo privado
+    private Map<String, Boolean> privateModeMap = new HashMap<>(); // Mapa que guarda el estado del modo privado para cada mundo
 
-    public RegionProtectionListener(RegionPlugin plugin) {
+    public TorneoCommand(RegionPlugin plugin) {
         this.plugin = plugin;
         plugin.getCommand("torneo").setExecutor(this);
     }
@@ -149,8 +157,35 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
             }.runTaskLater(plugin, 20L); // Esperar un segundo antes de aplicar los efectos
         }
     }
+    @EventHandler
+    public void onPlayerChangeWorld(PlayerChangedWorldEvent event) {
+        Player player = event.getPlayer();
+        String worldName = player.getWorld().getName();
 
+        // Verificamos si el modo privado está activo para el mundo donde el jugador entra
+        if (privateModeMap.getOrDefault(worldName, false)) { // Si no hay entrada en el mapa, devuelve 'false' por defecto
+            // Verificamos si el jugador tiene armadura y aplicamos el modo espectador si es necesario
+            Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+                @Override
+                public void run() {
+                    // Verificar si el jugador no tiene armadura y ponerlo en modo espectador
+                    if (!tieneArmadura(player)) {
+                        player.getInventory().clear();
+                        player.setGameMode(GameMode.SPECTATOR);
+                        player.sendMessage(ChatColor.RED + "Partida iniciada con capitanes, no puedes entrar.");
+                        player.performCommand("lista");
 
+                    }
+                }
+            }, 10L);
+        }
+    }
+    
+    @EventHandler
+    public void onWorldLoad(WorldLoadEvent event){
+        String worldName = event.getWorld().getName();
+        privateModeMap.put(worldName, false); // Desactivar el modo privado por defecto
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -203,14 +238,6 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                     } else {
                         player.sendMessage(ChatColor.RED + "Uso incorrecto: /torneo timer {tiempo}");
                     }
-                }else if (args[0].equalsIgnoreCase("update")) { // /torneo update
-                    // Mostrar la versión actual del plugin
-                    String currentVersion = plugin.getDescription().getVersion();
-                    sender.sendMessage("§aLa versión actual de RegionPlugin es: §b" + currentVersion);
-                
-                    // Iniciar la verificación de actualizaciones
-                    AutoUpdate updateChecker = new AutoUpdate(plugin); // Si necesita el plugin como parámetro
-                    updateChecker.checkForUpdates();
                 }else if (args[0].equalsIgnoreCase("help")) { // /torneo help
                     // Mostrar la lista de comandos disponibles
                     player.sendMessage(ChatColor.YELLOW + "Comandos disponibles:");
@@ -221,7 +248,6 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                     player.sendMessage(ChatColor.GREEN + "/torneo on [tiempo]: Inicia la protección de bloques en el mundo actual.");
                     player.sendMessage(ChatColor.GREEN + "/torneo off: Detiene la protección de bloques en el mundo actual.");
                     player.sendMessage(ChatColor.GREEN + "/torneo timer {tiempo}: Actualiza el tiempo de preparación en el mundo actual.");
-                    player.sendMessage(ChatColor.GREEN + "/torneo update: Verifica y descarga una nueva versión del plugin.");
                 }else {
                     // Subcomando no reconocido
                     player.sendMessage(ChatColor.RED + "Uso incorrecto del comando. Usa /torneo help para ver los comandos disponibles.");
@@ -229,6 +255,18 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
                 return true;
             } else {
                 sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean tieneArmadura(Player player) {
+        for (ItemStack armorPiece : player.getInventory().getArmorContents()) {
+            if (armorPiece != null && (armorPiece.getType() == Material.LEATHER_HELMET
+                    || armorPiece.getType() == Material.LEATHER_CHESTPLATE
+                    || armorPiece.getType() == Material.LEATHER_LEGGINGS
+                    || armorPiece.getType() == Material.LEATHER_BOOTS)) {
                 return true;
             }
         }
@@ -408,12 +446,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
     // Manejar el comando /torneo on
     private void handleTournamentOn(Player player, String[] args, String worldName) {
         globalProtectionStatus.remove(worldName); // Desactivar protección global
-
-        // Verificar si el comando /privado on está registrado
-        if (plugin.getServer().getPluginCommand("privado") != null) {
-            player.performCommand("privado on"); // Ejecutar el comando "/privado on" solo si está el plugin "captainsForTowers" instalado
-        }
-
+        privateModeMap.put(worldName, true); // Activar el modo privado
         // Cargar el archivo de configuración
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -442,10 +475,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
 
     // Manejar el comando /torneo off
     private void stopProtectionTimer(final String worldName, Player player) {
-        // Verificar si el comando /privado on está registrado
-        if (plugin.getServer().getPluginCommand("privado") != null) {
-            player.performCommand("privado off"); // Ejecutar el comando "/privado off" solo si está el plugin "captainsForTowers" instalado
-        }
+        privateModeMap.put(worldName, false); // Desactivar el modo privado
         if (protectionTimers.containsKey(worldName)) {
             protectionTimers.get(worldName).cancel(); // Se cancela el timer
             protectionTimers.remove(worldName); // Se remueven el timer
@@ -460,7 +490,7 @@ public class RegionProtectionListener implements Listener, CommandExecutor {
         }
     }
 
-    // Manejar el comadno /torneo timer
+    // Manejar el comando /torneo timer
     private void updatePreparationTime(int newPreparationTime, Player player, String worldName) {
         // Cargar el archivo de configuración
         File configFile = new File(plugin.getDataFolder(), "config.yml");
