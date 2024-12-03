@@ -4,7 +4,7 @@
   <groupId>org.TTChampagne</groupId>
   <artifactId>RegionPlugin</artifactId>
   <name>RegionPlugin</name>
-  <version>5.0.0</version>
+  <version>5.1.1</version>
   <build>
     <resources>
       <resource>

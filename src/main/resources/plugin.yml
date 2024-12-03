@@ -6,16 +6,19 @@ description: A plugin to prevent block placement in specified regions
 commands:
   torneo:
     description: Ejecuta comandos del torneo o maneja la protección de colocación de bloques
-    usage: /torneo [on|off]
+    usage: /<command> <on|off|add|delete|list|help>
   capitanes:
     description: Asigna capitanes a un equipo.
-    usage: /capitanes <jugador1> <jugador2> [...]
+    usage: /<command>
     aliases: [captains, picks]
   lista:
     description: Muestra la lista de jugadores en equipos.
-    usage: /lista
+    usage: /<command>
     aliases: [list]
   RegionPlugin:
     description: Muestra la versión del plugin
-    usage: /RegionPlugin
+    usage: /<command>
+  region:
+    description: Comando para gestionar regiones.
+    usage: /<command> <add|min|max|delete|timer|haste|list|help>
 

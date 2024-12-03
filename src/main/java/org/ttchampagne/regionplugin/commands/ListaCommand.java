@@ -16,6 +16,10 @@ public class ListaCommand implements CommandExecutor {
     @Override
     // si el comando ingresado es /lista
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
+            return true;
+        }
         if (command.getName().equalsIgnoreCase("lista")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;

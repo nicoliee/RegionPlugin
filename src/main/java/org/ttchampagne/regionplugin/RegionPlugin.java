@@ -6,10 +6,13 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.ttchampagne.regionplugin.commands.CapitanesCommand;
 import org.ttchampagne.regionplugin.commands.ListaCommand;
 import org.ttchampagne.regionplugin.commands.TorneoCommand;
+import org.ttchampagne.regionplugin.listeners.TorneoListeners;
 import org.ttchampagne.regionplugin.commands.RegionPluginCommand;
+import org.ttchampagne.regionplugin.commands.RegionCommand;
 
 
 import java.util.HashMap;
@@ -21,7 +24,26 @@ public class RegionPlugin extends JavaPlugin {
     private final Map<String, Region> regions = new HashMap<>(); // Mapa para almacenar las regiones definidas
     public static boolean privadoActivado; // Variable para almacenar el estado del modo privado
     public static String mundoPrivado; // Variable para almacenar el mundo donde se activó el modo privado
+    // Inicializar estructuras de datos
+    Map<String, Boolean> worldProtectionStatus = new HashMap<>();
+    Map<String, Boolean> globalProtectionStatus = new HashMap<>();
+    Map<String, BukkitRunnable> protectionTimers = new HashMap<>();
+    Map<String, Integer> protectionTimeRemaining = new HashMap<>();
+    Map<String, Integer> regenerationTimerRemaining = new HashMap<>();
+    Map<String, Integer> hasteTimerRemaining = new HashMap<>();
+    Map<String, Boolean> privateModeMap = new HashMap<>();
 
+    // Crear instancia de TorneoListeners con dependencias inicializadas
+    TorneoListeners torneoListeners = new TorneoListeners(
+        this, 
+        worldProtectionStatus, 
+        globalProtectionStatus, 
+        protectionTimers, 
+        protectionTimeRemaining, 
+        regenerationTimerRemaining, 
+        hasteTimerRemaining, 
+        privateModeMap
+    );
     @Override
     public void onEnable() {
         // Cargar el archivo de configuración predeterminado
@@ -29,13 +51,16 @@ public class RegionPlugin extends JavaPlugin {
         // Cargar las regiones definidas en el config.yml
         loadRegions();
         // Crear una instancia del listener que manejará la lógica de protección y comandos
-        TorneoCommand listener = new TorneoCommand(this);
+        Bukkit.getPluginManager().registerEvents(torneoListeners, this);
+        // Crear instancia del listener
+        TorneoListeners torneoListeners = new TorneoListeners(this, null, null, null, null, null, null, null);
         // Registrar los eventos de protección de regiones
-        Bukkit.getPluginManager().registerEvents(listener, this);
+        Bukkit.getPluginManager().registerEvents(torneoListeners, this);
         // Registrar el comando /torneo
-        this.getCommand("torneo").setExecutor(listener);
+        new TorneoCommand(this, torneoListeners);
         this.getCommand("capitanes").setExecutor(new CapitanesCommand());
         this.getCommand("lista").setExecutor(new ListaCommand());
+        this.getCommand("region").setExecutor(new RegionCommand(this));
         this.getCommand("RegionPlugin").setExecutor(new RegionPluginCommand(this));
         // Reinicio inicial de variables
         privadoActivado = false;

@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.TTChampagne</groupId>
   <artifactId>RegionPlugin</artifactId>
-  <version>5.0.0</version>
+  <version>5.1.0</version>
   <packaging>jar</packaging>
   <name>RegionPlugin</name>
   <properties>

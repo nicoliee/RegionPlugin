@@ -2,11 +2,13 @@ TheTowers1:
   P1: (0,0,0)
   P2: (10,10,10)
   Timer: 5
+  Haste: 2
 
 TheTowers2:
   P1: (0,0,0)
   P2: (10,10,10)
   Timer: 4
+  Haste: 2
 
 # Añadir más mundos y sus regiones según sea necesario
 
