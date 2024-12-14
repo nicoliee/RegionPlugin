@@ -14,7 +14,6 @@ commands:
   lista:
     description: Muestra la lista de jugadores en equipos.
     usage: /<command>
-    aliases: [list]
   RegionPlugin:
     description: Muestra la versión del plugin
     usage: /<command>
