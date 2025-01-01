@@ -27,7 +27,6 @@ import java.util.Map;
 public class TorneoListeners implements Listener{
     private final RegionPlugin plugin;
     private final Map<String, Boolean> worldProtectionStatus;
-    private final Map<String, Boolean> globalProtectionStatus;
     private final Map<String, BukkitRunnable> protectionTimers;
     private final Map<String, Integer> protectionTimeRemaining;
     private final Map<String, Integer> regenerationTimerRemaining;
@@ -36,7 +35,6 @@ public class TorneoListeners implements Listener{
 
     public TorneoListeners(RegionPlugin plugin,
                        Map<String, Boolean> worldProtectionStatus,
-                       Map<String, Boolean> globalProtectionStatus,
                        Map<String, BukkitRunnable> protectionTimers,
                        Map<String, Integer> protectionTimeRemaining,
                        Map<String, Integer> regenerationTimerRemaining,
@@ -44,7 +42,6 @@ public class TorneoListeners implements Listener{
                        Map<String, Boolean> privateModeMap) {
         this.plugin = plugin;
         this.worldProtectionStatus = worldProtectionStatus != null ? worldProtectionStatus : new HashMap<>();
-        this.globalProtectionStatus = globalProtectionStatus != null ? globalProtectionStatus : new HashMap<>();
         this.protectionTimers = protectionTimers != null ? protectionTimers : new HashMap<>();
         this.protectionTimeRemaining = protectionTimeRemaining != null ? protectionTimeRemaining : new HashMap<>();
         this.regenerationTimerRemaining = regenerationTimerRemaining != null ? regenerationTimerRemaining : new HashMap<>();
@@ -56,21 +53,13 @@ public class TorneoListeners implements Listener{
     // Logica para la protección de bloques
     public void onBlockPlace(BlockPlaceEvent event) {
         String worldName = event.getBlock().getWorld().getName();
-
-        // Verificar si la protección global está activa
-        if (globalProtectionStatus.getOrDefault(worldName, false)) {
-            event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.RED + "No puedes poner bloques hasta que inicie la partida.");
-            return;
-        }
-
-        // Lógica original de protección por región
         Boolean isProtectionActive = worldProtectionStatus.get(worldName);
         if (isProtectionActive != null && isProtectionActive) {
             Region region = plugin.getRegions().get(worldName);
             if (region != null && region.isInside(event.getBlock().getLocation())) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes construir en tiempo de preparación.");
+                event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
+                plugin.getMessagesConfig().getString("messages.preparation_block_place")));
             }
         }
     }
@@ -80,20 +69,14 @@ public class TorneoListeners implements Listener{
     public void onBlockBreak(BlockBreakEvent event) {
         String worldName = event.getBlock().getWorld().getName();
 
-        // Verificar si la protección global está activa
-        if (globalProtectionStatus.getOrDefault(worldName, false)) {
-            event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.RED + "No puedes romper bloques hasta que inicie la partida.");
-            return;
-        }
-
         // Lógica original de protección por región
         Boolean isProtectionActive = worldProtectionStatus.get(worldName);
         if (isProtectionActive != null && isProtectionActive) {
             Region region = plugin.getRegions().get(worldName);
             if (region != null && region.isInside(event.getBlock().getLocation())) {
                 event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.YELLOW + "No puedes romper bloques en esta región.");
+                event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
+                plugin.getMessagesConfig().getString("messages.preparation_block_break")));
             }
         }
     }
@@ -103,16 +86,8 @@ public class TorneoListeners implements Listener{
     public void onPistonExtend(BlockPistonExtendEvent event) {
         String worldName = event.getBlock().getWorld().getName();
         Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-
         if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-
-            for (org.bukkit.block.Block block : event.getBlocks()) {
-                if (region != null && region.isInside(block.getLocation())) {
-                    event.setCancelled(true);
-                    break;
-                }
-            }
+            event.setCancelled(true);
         }
     }
 
@@ -121,16 +96,8 @@ public class TorneoListeners implements Listener{
     public void onPistonRetract(BlockPistonRetractEvent event) {
         String worldName = event.getBlock().getWorld().getName();
         Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-
         if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-
-            for (org.bukkit.block.Block block : event.getBlocks()) {
-                if (region != null && region.isInside(block.getLocation())) {
-                    event.setCancelled(true);
-                    break;
-                }
-            }
+            event.setCancelled(true);
         }
     }
 
@@ -146,18 +113,12 @@ public class TorneoListeners implements Listener{
         }
         int remainingTime = protectionTimeRemaining.getOrDefault(worldName, 0);
         if (remainingTime > 0) {
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    applyRegenerationEffect(worldName, remainingTime); // Aplicar Regeneración
-
-                    // Verificar si queda tiempo de Haste II
-                    int remainingHasteTime = hasteTimerRemaining.getOrDefault(worldName, 0);
-                    if (remainingHasteTime > 0) {
-                        applyHasteEffect(worldName, remainingHasteTime); // Aplicar el tiempo restante de Haste II
-                    }
-                }
-            }.runTaskLater(plugin, 20L); // Esperar un segundo antes de aplicar los efectos
+            applyRegenerationEffect(worldName, remainingTime); // Aplicar Regeneración si queda tiempo de preparación
+            // Verificar si queda tiempo de Haste II
+            int remainingHasteTime = hasteTimerRemaining.getOrDefault(worldName, 0);
+            if (remainingHasteTime > 0) {
+                applyHasteEffect(worldName, remainingHasteTime); // Aplicar el tiempo restante de Haste II
+            }
         }
     }
     @EventHandler
@@ -175,9 +136,9 @@ public class TorneoListeners implements Listener{
                     if (!tieneArmadura(player)) {
                         player.getInventory().clear();
                         player.setGameMode(GameMode.SPECTATOR);
-                        player.sendMessage(ChatColor.RED + "Partida iniciada con capitanes, no puedes entrar.");
+                        event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
+                        plugin.getMessagesConfig().getString("messages.privatemode_warning")));
                         player.performCommand("lista");
-
                     }
                 }
             }, 10L);
@@ -187,9 +148,8 @@ public class TorneoListeners implements Listener{
     @EventHandler
     public void onWorldLoad(WorldLoadEvent event){
         String worldName = event.getWorld().getName();
-        privateModeMap.put(worldName, false); // Desactivar el modo privado por defecto
+        privateModeMap.put(worldName, false); // Desactivar el modo privado
     }
-
     // Verificar si el jugador tiene armadura de cuero
     private boolean tieneArmadura(Player player) {
         for (ItemStack armorPiece : player.getInventory().getArmorContents()) {
@@ -206,7 +166,8 @@ public class TorneoListeners implements Listener{
     // Iniciar la protección de bloques
     public void startProtectionTimer(final String worldName, Player player, int preparationTime, int hasteTime) {
         if (protectionTimers.containsKey(worldName)) {
-            player.sendMessage(ChatColor.YELLOW + "La protección ya está activa en este mundo.");
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        plugin.getMessagesConfig().getString("messages.preparation_already_started")));
             return;
         }
         worldProtectionStatus.put(worldName, true);
@@ -230,10 +191,14 @@ public class TorneoListeners implements Listener{
                     if (timeRemaining % 60 == 0) {
                         // Si el tiempo es divisible dentro de 60 y es mayor a 0 mostrará un mensaje con el tiempo faltante
                         int minutesRemaining = timeRemaining / 60;
-                        sendMessageToWorldPlayers(worldName, "Quedan " + minutesRemaining + " minutos hasta que termine el tiempo de preparación.");
+                        sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        .getString("messages.preparation_minutes_left")
+                        .replace("{minutes}", String.valueOf(minutesRemaining))));
                     } else if (timeRemaining == 30 || timeRemaining == 10 || (timeRemaining <= 5 && timeRemaining >= 1)) {
                         // Si el tiempo restante son 30, 10, 5, 4, 3, 2, 1 segundos mostrará un mensaje
-                        sendMessageToWorldPlayers(worldName, "Quedan " + timeRemaining + " segundos hasta que termine el tiempo de preparación.");
+                        sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        .getString("messages.preparation_seconds_left")
+                        .replace("{seconds}", String.valueOf(timeRemaining))));
                     }
                 } else {
                     // Tiempo de preparación terminado
@@ -241,8 +206,9 @@ public class TorneoListeners implements Listener{
                     protectionTimers.remove(worldName);
                     protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
                     removeHasteEffect(worldName);
-                    sendMessageToWorldPlayers(worldName, "El tiempo de preparación ha terminado.");
-                    Bukkit.getLogger().info("Protección de colocación de bloques terminada en el mundo " + worldName);
+                    sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                    .getString("messages.preparation_ended")));
+                    Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation_ended")));
                     this.cancel();
                 }
                 // Si ya pasaron {haste} segundos, dejar de aplicar Haste II
@@ -255,8 +221,13 @@ public class TorneoListeners implements Listener{
         };
         task.runTaskTimer(plugin, 0, 20); // Ejecutar el timer cada segundo
         protectionTimers.put(worldName, task);
-        Bukkit.getLogger().info("Protección de colocación de bloques iniciada por " + (preparationTime / 60) + " minutos en el mundo " + worldName);
-        sendMessageToWorldPlayers(worldName, "Quedan " + (preparationTime / 60) + " minutos hasta que termine el tiempo de preparación.");
+        int preparationTimeinMinutes = preparationTime / 60;
+        Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        .getString("messages.preparation_started")
+                        .replace("{minutes}", String.valueOf(preparationTimeinMinutes))));
+        sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        .getString("messages.preparation_started")
+                        .replace("{minutes}", String.valueOf(preparationTimeinMinutes))));
     }
 
     // Detener la protección de bloques
@@ -269,10 +240,13 @@ public class TorneoListeners implements Listener{
             protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
             removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
             removeHasteEffect(worldName); // Eliminar el efecto de Haste II
-            sendMessageToWorldPlayers(worldName, "Tiempo de preparación cancelado.");
-            Bukkit.getLogger().info("La protección de colocación de bloques ha sido detenida en el mundo " + worldName);
+            sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                    .getString("messages.preparation_cancelled")));
+                    Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                    .getString("messages.preparation_cancelled")));
         } else {
-            player.sendMessage(ChatColor.YELLOW + "No se encontró protección activa en el mundo " + worldName);
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+            ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation_cancelled_error"))));
         }
     }
 
@@ -319,16 +293,6 @@ public class TorneoListeners implements Listener{
                 onlinePlayer.sendMessage(ChatColor.YELLOW + message);
             }
         }
-    }
-
-    // Métodos para manejar la protección global
-    public void setGlobalProtection(String worldName, boolean status) {
-        globalProtectionStatus.put(worldName, status);
-    }
-
-    // Métodos para manejar la protección por región
-    public void removeGlobalProtection(String worldName) {
-        globalProtectionStatus.remove(worldName);
     }
     
     // Métodos para manejar el modo privado

@@ -5,8 +5,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.command.Command;
+import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.ttchampagne.regionplugin.RegionPlugin;
 import org.ttchampagne.regionplugin.update.AutoUpdate;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.TabCompleter;
@@ -21,22 +23,28 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         // Verificar si el usuario tiene permisos
         if (!sender.hasPermission("towers.admin") && !sender.isOp()) {
-            sender.sendMessage("§cNo tienes permiso para usar este comando.");
+            sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.no_permission")));
             return true;
         }
+
         // Si el comando es "/RegionPlugin"
         if (command.getName().equalsIgnoreCase("RegionPlugin")) {
             // Si no hay argumentos, muestra la versión actual
             if (args.length == 0) {
                 String currentVersion = plugin.getDescription().getVersion();
-                sender.sendMessage("§aLa versión actual de RegionPlugin es: §b" + currentVersion);
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.current_version")
+                        .replace("{version}", currentVersion)));
                 return true;
             }
             // Si el comando es "/RegionPlugin update"
             else if (args[0].equalsIgnoreCase("update")) {
                 // Mostrar la versión actual del plugin
                 String currentVersion = plugin.getDescription().getVersion();
-                sender.sendMessage("§aLa versión actual de RegionPlugin es: §b" + currentVersion);
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.current_version")
+                        .replace("{version}", currentVersion)));
 
                 // Iniciar la verificación de actualizaciones
                 AutoUpdate updateChecker = new AutoUpdate(plugin); // Si necesita el plugin como parámetro
@@ -46,21 +54,39 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
             }
             // Si el comando es "/RegionPlugin reload"
             else if (args[0].equalsIgnoreCase("reload")) {
-                sender.sendMessage("§aRecargando el plugin...");
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.reload_start")));
+
+                // Reiniciar el plugin (deshabilitar y habilitar)
                 plugin.getServer().getPluginManager().disablePlugin(plugin);
                 plugin.getServer().getPluginManager().enablePlugin(plugin);
-                sender.sendMessage("§aEl plugin se ha recargado correctamente.");
+
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.reload_success")));
+                return true;
+            }
+            // Si el comando es "/RegionPlugin configreload"
+            else if (args[0].equalsIgnoreCase("configreload")) {
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.config_reload")));
+
+                // Recargar archivos de configuración
+                ((RegionPlugin) plugin).loadRegions(); // Recargar regiones desde la configuración
+                ((RegionPlugin) plugin).saveDefaultMessages(); // Recargar mensajes
+
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.config_reloaded")));
                 return true;
             }
         }
         return false;
     }
-    
+
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             // Lista de opciones posibles
-            List<String> options = Arrays.asList("reload", "update");
+            List<String> options = Arrays.asList("configreload", "reload", "update");
 
             // Filtrar las opciones que comienzan con el texto ingresado por el usuario
             String input = args[0].toLowerCase();

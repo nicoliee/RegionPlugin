@@ -5,6 +5,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.ttchampagne.regionplugin.commands.CapitanesCommand;
@@ -14,7 +15,7 @@ import org.ttchampagne.regionplugin.listeners.TorneoListeners;
 import org.ttchampagne.regionplugin.commands.RegionPluginCommand;
 import org.ttchampagne.regionplugin.commands.RegionCommand;
 
-
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +25,7 @@ public class RegionPlugin extends JavaPlugin {
     private final Map<String, Region> regions = new HashMap<>(); // Mapa para almacenar las regiones definidas
     public static boolean privadoActivado; // Variable para almacenar el estado del modo privado
     public static String mundoPrivado; // Variable para almacenar el mundo donde se activó el modo privado
+    private FileConfiguration messagesConfig; // Configuración de mensajes
     // Inicializar estructuras de datos
     Map<String, Boolean> worldProtectionStatus = new HashMap<>();
     Map<String, Boolean> globalProtectionStatus = new HashMap<>();
@@ -37,7 +39,6 @@ public class RegionPlugin extends JavaPlugin {
     TorneoListeners torneoListeners = new TorneoListeners(
         this, 
         worldProtectionStatus, 
-        globalProtectionStatus, 
         protectionTimers, 
         protectionTimeRemaining, 
         regenerationTimerRemaining, 
@@ -53,21 +54,23 @@ public class RegionPlugin extends JavaPlugin {
         // Crear una instancia del listener que manejará la lógica de protección y comandos
         Bukkit.getPluginManager().registerEvents(torneoListeners, this);
         // Crear instancia del listener
-        TorneoListeners torneoListeners = new TorneoListeners(this, null, null, null, null, null, null, null);
+        TorneoListeners torneoListeners = new TorneoListeners(this, null, null, null, null, null, null);
         // Registrar los eventos de protección de regiones
         Bukkit.getPluginManager().registerEvents(torneoListeners, this);
         // Registrar el comando /torneo
         new TorneoCommand(this, torneoListeners);
-        this.getCommand("capitanes").setExecutor(new CapitanesCommand());
-        this.getCommand("lista").setExecutor(new ListaCommand());
+        getCommand("capitanes").setExecutor(new CapitanesCommand(this));
+        getCommand("lista").setExecutor(new ListaCommand(this));
         this.getCommand("region").setExecutor(new RegionCommand(this));
         this.getCommand("RegionPlugin").setExecutor(new RegionPluginCommand(this));
         // Reinicio inicial de variables
         privadoActivado = false;
         mundoPrivado = "";
+        // Cargar Messages.yml
+        saveDefaultMessages();
     }
     // Método para cargar las regiones desde el archivo de configuración
-    private void loadRegions() {
+    public void loadRegions() {
         // Obtener el archivo de configuración
         FileConfiguration config = getConfig();
         // Obtener los mundos definidos en el archivo de configuración
@@ -98,5 +101,19 @@ public class RegionPlugin extends JavaPlugin {
     // Método para obtener el mapa de regiones
     public Map<String, Region> getRegions() {
         return regions;
+    }
+
+    // Método para guardar el archivo de configuración de mensajes
+    public void saveDefaultMessages() {
+        File messagesFile = new File(getDataFolder(), "messages.yml");
+        if (!messagesFile.exists()) {
+            saveResource("messages.yml", false);
+        }
+        messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+    }
+
+    // Método para obtener el archivo de configuración de mensajes
+    public FileConfiguration getMessagesConfig() {
+        return messagesConfig;
     }
 }

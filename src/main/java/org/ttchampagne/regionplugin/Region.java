@@ -3,8 +3,8 @@ import org.bukkit.Location;
 
 public class Region {
     // Atributos de la clase
-    private final Location p1;
-    private final Location p2;
+    private Location p1;
+    private Location p2;
 
     public Region(Location p1, Location p2) {
         // Inicialización de los atributos
@@ -26,4 +26,11 @@ public class Region {
                 loc.getY() >= y1 && loc.getY() <= y2 &&
                 loc.getZ() >= z1 && loc.getZ() <= z2;
     }
+    public void setP1(Location p1) {
+        this.p1 = p1;
+    }
+    public void setP2(Location p2) {
+        this.p2 = p2;
+    }
+    
 }

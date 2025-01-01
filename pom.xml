@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.TTChampagne</groupId>
   <artifactId>RegionPlugin</artifactId>
-  <version>5.1.2</version>
+  <version>5.2.1</version>
   <packaging>jar</packaging>
   <name>RegionPlugin</name>
   <properties>
@@ -22,7 +22,6 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
-          <createDependencyReducedPom>false</createDependencyReducedPom>
         </configuration>
       </plugin>
       <plugin>

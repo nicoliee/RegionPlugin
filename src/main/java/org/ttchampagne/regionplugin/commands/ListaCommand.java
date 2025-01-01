@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -11,15 +12,22 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.command.CommandExecutor;
+import org.ttchampagne.regionplugin.RegionPlugin;
 
 public class ListaCommand implements CommandExecutor {
+    private final RegionPlugin plugin;
+    public ListaCommand(RegionPlugin plugin) {
+        this.plugin = plugin;
+    }
     @Override
     // si el comando ingresado es /lista
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player)) {
-            sender.sendMessage("Este comando solo puede ser ejecutado por jugadores.");
-            return true;
-        }
+        // Verificar que el sender sea un jugador
+            if (!(sender instanceof Player)) {
+                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                        plugin.getMessagesConfig().getString("messages.no_player")));
+                return true;
+            }
         if (command.getName().equalsIgnoreCase("lista")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
@@ -50,6 +58,8 @@ public class ListaCommand implements CommandExecutor {
                 
                 // crea un mensaje con la lista de jugadores en los equipos
                 StringBuilder mensaje = new StringBuilder();
+                //TODO Agregar "teams" y el color de los equipos a messages.yml
+                //TODO agregar la suma de jugadores en cada equipo
                 mensaje.append("§7Teams:\n");
                 mensaje.append(formatearMensajeEquipo("§4 Red", rojo, "§4", "§8", "§f"));
                 mensaje.append(formatearMensajeEquipo("§9 Blue", azul, "§9", "§8", "§f"));
@@ -57,9 +67,6 @@ public class ListaCommand implements CommandExecutor {
                 // envía el mensaje al jugador que ejecutó el comando
                 sender.sendMessage(mensaje.toString());
                 return true;
-            } else {
-                sender.sendMessage("Este comando solo puede ser ejecutado por un jugador.");
-                return false;
             }
         }
         return false;
@@ -107,6 +114,7 @@ public class ListaCommand implements CommandExecutor {
         return color.getBlue() > 200 && color.getGreen() < 100 && color.getRed() < 100;
     }
     // formatea un mensaje con la lista de jugadores en un equipo
+    // TODO agregar separador "and" en messages.yml
     private String formatearMensajeEquipo(String titulo, List<String> jugadores, String color, String separador, String colorNum) {
         StringBuilder resultado = new StringBuilder();
         resultado.append(titulo).append(": ").append(colorNum).append(jugadores.size()).append("\n");
