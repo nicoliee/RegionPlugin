@@ -196,6 +196,12 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
         // Obtener el tiempo de preparación desde el config.yml
         int preparationTime = 4; // Valor predeterminado de 4 minutos
         int hasteTime = 2; // Valor predeterminado de 2 minutos
+        // Verificar si el mundo está configurado
+        if (!config.contains(worldName)) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+            return;
+        }
         if (config.contains(worldName + ".Timer")) {
             preparationTime = config.getInt(worldName + ".Timer"); // Obtener el tiempo de preparación
         } else {
@@ -214,5 +220,4 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
         hasteTime *= 60; // Convertir minutos a segundos
         torneoListeners.startProtectionTimer(worldName, player, preparationTime, hasteTime); // Iniciar el temporizador de protección
     }
-    
 }

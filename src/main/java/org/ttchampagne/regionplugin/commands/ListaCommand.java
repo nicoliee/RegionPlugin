@@ -39,6 +39,7 @@ public class ListaCommand implements CommandExecutor {
                 List<String> espectadores = new ArrayList<>();
 
                 // recorre todos los jugadores en línea pero solo los que están en el mundo actual
+                //TODO agregar la suma de jugadores en cada equipo
                 for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                     if (!onlinePlayer.getWorld().getName().equals(worldName)) {
                         continue;
@@ -59,7 +60,6 @@ public class ListaCommand implements CommandExecutor {
                 // crea un mensaje con la lista de jugadores en los equipos
                 StringBuilder mensaje = new StringBuilder();
                 //TODO Agregar "teams" y el color de los equipos a messages.yml
-                //TODO agregar la suma de jugadores en cada equipo
                 mensaje.append("§7Teams:\n");
                 mensaje.append(formatearMensajeEquipo("§4 Red", rojo, "§4", "§8", "§f"));
                 mensaje.append(formatearMensajeEquipo("§9 Blue", azul, "§9", "§8", "§f"));

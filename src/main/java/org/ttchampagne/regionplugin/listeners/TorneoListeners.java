@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -194,12 +195,24 @@ public class TorneoListeners implements Listener{
                         sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                         .getString("messages.preparation_minutes_left")
                         .replace("{minutes}", String.valueOf(minutesRemaining))));
-                    } else if (timeRemaining == 30 || timeRemaining == 10 || (timeRemaining <= 5 && timeRemaining >= 1)) {
+                        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                            if (onlinePlayer.getWorld().getName().equals(worldName)) {
+                                onlinePlayer.playSound(onlinePlayer.getLocation(), "random.click", 1.0f, 2.0f);
+                            }
+                        }
+                    } else if (timeRemaining == 30 || timeRemaining == 10 || (timeRemaining <= 4 && timeRemaining >= 1)) {
                         // Si el tiempo restante son 30, 10, 5, 4, 3, 2, 1 segundos mostrará un mensaje
                         sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                         .getString("messages.preparation_seconds_left")
                         .replace("{seconds}", String.valueOf(timeRemaining))));
-                    }
+                    } if (timeRemaining <= 30) {
+                        // Reproducir un sonido de alerta si el tiempo restante es menor o igual a 30 segundos
+                        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                            if (onlinePlayer.getWorld().getName().equals(worldName)) {
+                                onlinePlayer.playSound(onlinePlayer.getLocation(), "random.click", 1.0f, 2.0f);
+                            }
+                        }
+                    }                              
                 } else {
                     // Tiempo de preparación terminado
                     worldProtectionStatus.put(worldName, false);
@@ -208,6 +221,21 @@ public class TorneoListeners implements Listener{
                     removeHasteEffect(worldName);
                     sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                     .getString("messages.preparation_ended")));
+                    for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+                        if (onlinePlayer.getWorld().getName().equals(worldName)) {
+                            Sound sound;
+                    
+                            try {
+                                // Intentamos usar el sonido para versiones modernas
+                                sound = Sound.valueOf("ENTITY_ENDERDRAGON_GROWL");
+                            } catch (IllegalArgumentException e) {
+                                // Usamos el sonido antiguo si el moderno no existe
+                                sound = Sound.valueOf("ENDERDRAGON_GROWL");
+                            }
+                    
+                            onlinePlayer.playSound(onlinePlayer.getLocation(), sound, 0.5f, 1.0f);
+                        }
+                    }                    
                     Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation_ended")));
                     this.cancel();
                 }

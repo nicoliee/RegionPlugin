@@ -54,6 +54,10 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
             break;
 
         case "min":
+        if (!config.contains(worldName)) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+        }
         if (args.length == 4) {
             try {
                 int x = Integer.parseInt(args[1]);
@@ -84,6 +88,10 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
         break;
 
     case "max":
+        if (!config.contains(worldName)) {
+            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
+                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+        }
         if (args.length == 4) {
             try {
                 int x = Integer.parseInt(args[1]);
