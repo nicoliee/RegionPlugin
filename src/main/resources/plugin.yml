@@ -20,4 +20,7 @@ commands:
   region:
     description: Comando para gestionar regiones.
     usage: /<command> <add|min|max|delete|timer|haste|list|help>
+  tabla:
+    description: Comando para gestionar tablas de la base de datos.
+    usage: /<command> 
 
