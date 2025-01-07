@@ -38,34 +38,34 @@ public class AutoUpdate {
                 String latestVersion = parseVersionFromJson(response);
                 if (latestVersion == null) {
                     plugin.getLogger().severe("No se pudo obtener la última versión del JSON.");
-                    notifyAdmins("§cError al verificar actualizaciones. Consulta la consola para más información.");
+                    notifyAdmins("§8[§bRegionPlugin§8] §cError.");
                     return;
                 }
 
                 if (compareVersions(currentVersion, latestVersion) >= 0) {
                     // Si la versión actual es igual o mayor que la última
-                    plugin.getLogger().info("RegionPlugin está actualizado.");
-                    notifyAdmins("§aRegionPlugin está actualizado a la versión más reciente. §8[§b" + latestVersion + "§8]");
+                    plugin.getLogger().info("RegionPlugin is up to date.");
+                    notifyAdmins("§8[§bRegionPlugin§8] §aUp to date.");
                 } else {
-                    plugin.getLogger().info("Nueva versión disponible: " + latestVersion);
-                    notifyAdmins("§eNueva versión de RegionPlugin disponible: " + latestVersion);
+                    plugin.getLogger().info("New version available: " + latestVersion);
+                    notifyAdmins("§8[§bRegionPlugin§8] §eNew version available: " + latestVersion);
 
                     String downloadUrl = parseDownloadUrlFromJson(response);
                     if (downloadUrl == null) {
-                        plugin.getLogger().severe("No se pudo obtener la URL de descarga del JSON.");
-                        notifyAdmins("§cError al verificar actualizaciones. Consulta la consola para más información.");
+                        plugin.getLogger().severe("URL error.");
+                        notifyAdmins("§8[§bRegionPlugin§8] §cError.");
                         return;
                     }
 
                     // Descargar la nueva versión
-                    notifyAdmins("§eDescargando nueva versión de RegionPlugin...");
+                    notifyAdmins("§8[§bRegionPlugin§8] §eDownloading...");
                     downloadNewVersion(downloadUrl);
                     plugin.getLogger().info("Nueva versión descargada. Notificando a los administradores...");
-                    notifyAdmins("§aNueva versión descargada. Reinicia el servidor para aplicar los cambios.");
+                    notifyAdmins("§8[§bRegionPlugin§8] §aDownloaded. Restart the server.");
                 }
             } catch (Exception e) {
                 plugin.getLogger().severe("Error verificando actualizaciones: " + e.getMessage());
-                notifyAdmins("§cOcurrió un error al verificar actualizaciones. Consulta la consola para más información.");
+                notifyAdmins("§8[§bRegionPlugin§8] §cError.");
             }
         });
     }

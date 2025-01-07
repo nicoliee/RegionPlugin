@@ -1,9 +1,17 @@
 package org.ttchampagne.regionplugin.commands;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.net.URL;
 
 import org.bukkit.command.Command;
 import org.bukkit.ChatColor;
@@ -28,91 +36,118 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
                     ((RegionPlugin) plugin).getMessagesConfig().getString("messages.no_permission")));
             return true;
         }
-
         // Si el comando es "/RegionPlugin"
         if (command.getName().equalsIgnoreCase("RegionPlugin")) {
             // Si no hay argumentos, muestra la versión actual
             if (args.length == 0) {
                 String currentVersion = plugin.getDescription().getVersion();
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.current_version")
-                        .replace("{version}", currentVersion)));
+                sender.sendMessage("§8[§bRegionPlugin§8] §7v" + currentVersion);
                 return true;
-            }
-            // Si el comando es "/RegionPlugin update"
-            else if (args[0].equalsIgnoreCase("update")) {
-                // Mostrar la versión actual del plugin
+            // Si el comando es "/regionplugin update"
+            } else if (args[0].equalsIgnoreCase("update")) {
                 String currentVersion = plugin.getDescription().getVersion();
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.current_version")
-                        .replace("{version}", currentVersion)));
-
-                // Iniciar la verificación de actualizaciones
-                AutoUpdate updateChecker = new AutoUpdate(plugin); // Si necesita el plugin como parámetro
+                sender.sendMessage("§8[§bRegionPlugin§8] §7v" + currentVersion);
+                AutoUpdate updateChecker = new AutoUpdate(plugin);
                 updateChecker.checkForUpdates();
-
                 return true;
-            }
-            // Si el comando es "/RegionPlugin reload"
-            else if (args[0].equalsIgnoreCase("reload")) {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.reload_start")));
-
-                // Reiniciar el plugin (deshabilitar y habilitar)
+            // Si el comando es "/regionplugin reload"
+            } else if (args[0].equalsIgnoreCase("reload")) {
+                sender.sendMessage("§8[§bRegionPlugin§8] §7Reloading...");
                 plugin.getServer().getPluginManager().disablePlugin(plugin);
                 plugin.getServer().getPluginManager().enablePlugin(plugin);
-
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.reload_success")));
+                sender.sendMessage("§8[§bRegionPlugin§8] §7Reloaded.");
                 return true;
-            }
-            // Si el comando es "/RegionPlugin configreload"
-            else if (args[0].equalsIgnoreCase("configreload")) {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.config_reload")));
-
-                // Recargar archivos de configuración
-                ((RegionPlugin) plugin).loadRegions(); // Recargar regiones desde la configuración
-                ((RegionPlugin) plugin).saveDefaultMessages(); // Recargar mensajes
-
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.config_reloaded")));
-                return true;
-            }
-            // Si el comando es "/RegionPlugin messagesreload"
-            else if (args[0].equalsIgnoreCase("messagesreload")) {
+            // Si el comando es "/regionplugin messagesreload"
+            } else if (args[0].equalsIgnoreCase("messagesreload")) {
                 File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
-
-                // Notificar al usuario que el proceso ha comenzado
-                sender.sendMessage(ChatColor.YELLOW + "Starting the messages reset process...");
-
-                // Si el archivo de mensajes existe, eliminarlo
-                if (messagesFile.exists()) {
-                    if (!messagesFile.delete()) {
-                         sender.sendMessage(ChatColor.RED + "Failed to delete the messages file.");
-                        return true;
-                    }
+                sender.sendMessage("§8[§bRegionPlugin§8] §eStarting the messages reset process...");
+                if (messagesFile.exists() && !messagesFile.delete()) {
+                    sender.sendMessage("§8[§bRegionPlugin§8] §cFailed to delete the messages file.");
+                    return true;
                 }
-
-                // Guardar el archivo de mensajes predeterminado
                 plugin.saveResource("messages.yml", false);
-
-                // Recargar mensajes
                 ((RegionPlugin) plugin).saveDefaultMessages();
-
-                // Notificar al usuario que el proceso ha finalizado
-                sender.sendMessage(ChatColor.GREEN + "Messages have been successfully reset and reloaded.");
+                sender.sendMessage("§8[§bRegionPlugin§8] §aMessages have been successfully reset and reloaded.");
                 return true;
+            // Si el comando es "/regionplugin configreplace"
+            } else if (args[0].equalsIgnoreCase("configreplace")) {
+                sender.sendMessage("§8[§bRegionPlugin§8] §eDownloading and extracting the configuration files...");
+                String zipFileUrl = "https://github.com/nicoliee/configForTowers/archive/refs/heads/main.zip";
+                File pluginsFolder = new File("plugins");
+                try {
+                    downloadFile(zipFileUrl, new File(pluginsFolder, "configForTowers.zip"));
+                    unzipFile(new File(pluginsFolder, "configForTowers.zip"), pluginsFolder);
+                    new File(pluginsFolder, "configForTowers.zip").delete();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    sender.sendMessage("§8[§bRegionPlugin§8] §cFailed to download and extract the configuration files.");
+                    return true;
+                }
+                sender.sendMessage("§8[§bRegionPlugin§8] §aThe configuration files have been successfully downloaded and extracted.");
+                return true;
+            } else {
+                sender.sendMessage(ChatColor.RED + "Use /RegionPlugin <configreplace|messagesreload|reload|update>");
+                return true;
+            }
+        }        
+        // Comando no pertenece a "/RegionPlugin"
+        return false;
+    }
+    
+    private void downloadFile(String fileUrl, File destinationFile) throws IOException {
+        URL url = new URL(fileUrl);
+        try (InputStream in = url.openStream(); FileOutputStream out = new FileOutputStream(destinationFile)) {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
             }
         }
-        return false;
+    }
+
+    private void unzipFile(File zipFile, File destinationFolder) throws IOException {
+        try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry entry = zipIn.getNextEntry();
+            
+            // Si la primera entrada tiene un prefijo, se utiliza para ajustar las rutas
+            String mainDirPrefix = entry.getName().split("/")[0] + "/";
+            
+            // Recorre todas las entradas del ZIP
+            while (entry != null) {
+                String fileName = entry.getName();
+                
+                // Elimina el prefijo del nombre del archivo para evitar el directorio principal
+                if (fileName.startsWith(mainDirPrefix)) {
+                    fileName = fileName.substring(mainDirPrefix.length());
+                }
+                
+                // Crea los archivos o directorios en el destino
+                File file = new File(destinationFolder, fileName);
+                if (entry.isDirectory()) {
+                    file.mkdirs();
+                } else {
+                    // Asegúrate de crear el directorio si no existe
+                    file.getParentFile().mkdirs();
+                    
+                    try (BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = zipIn.read(buffer)) != -1) {
+                            out.write(buffer, 0, bytesRead);
+                        }
+                    }
+                }
+                zipIn.closeEntry();
+                entry = zipIn.getNextEntry();
+            }
+        }
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             // Lista de opciones posibles
-            List<String> options = Arrays.asList("configreload", "messagesreload", "reload", "update");
+            List<String> options = Arrays.asList("configreplace", "messagesreload", "reload", "update");
 
             // Filtrar las opciones que comienzan con el texto ingresado por el usuario
             String input = args[0].toLowerCase();
