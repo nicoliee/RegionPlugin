@@ -54,14 +54,15 @@ public class TorneoListeners implements Listener{
     // Logica para la protección de bloques
     public void onBlockPlace(BlockPlaceEvent event) {
         String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-        if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-            if (region != null && region.isInside(event.getBlock().getLocation())) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                plugin.getMessagesConfig().getString("messages.preparation_block_place")));
-            }
+        if(!isProtectionActive(worldName)){
+            return;
+        }
+        Region region = plugin.getRegions().get(worldName);
+        if (region != null && region.isInside(event.getBlock().getLocation())) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
+            plugin.getMessagesConfig().getString("messages.preparation_block_place")));
+            event.getPlayer().playSound(event.getPlayer().getLocation(), "tile.piston.out", 1.0f, 1.0f);
         }
     }
 
@@ -69,16 +70,15 @@ public class TorneoListeners implements Listener{
     // Logica para la destrucción de bloques
     public void onBlockBreak(BlockBreakEvent event) {
         String worldName = event.getBlock().getWorld().getName();
-
-        // Lógica original de protección por región
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-        if (isProtectionActive != null && isProtectionActive) {
-            Region region = plugin.getRegions().get(worldName);
-            if (region != null && region.isInside(event.getBlock().getLocation())) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                plugin.getMessagesConfig().getString("messages.preparation_block_break")));
-            }
+        if(!isProtectionActive(worldName)){
+            return;
+        }
+        Region region = plugin.getRegions().get(worldName);
+        if (region != null && region.isInside(event.getBlock().getLocation())) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
+            plugin.getMessagesConfig().getString("messages.preparation_block_break")));
+            event.getPlayer().playSound(event.getPlayer().getLocation(), "tile.piston.out", 1.0f, 1.0f);
         }
     }
 
@@ -323,8 +323,13 @@ public class TorneoListeners implements Listener{
         }
     }
     
-    // Métodos para manejar el modo privado
+    // Método para manejar el modo privado
     public void setPrivateMode(String worldName, boolean status) {
         privateModeMap.put(worldName, status);
+    }
+
+    // Método para verificar si el tiempo de preparación está activo
+    public boolean isProtectionActive(String worldName) {
+        return worldProtectionStatus.getOrDefault(worldName, false);
     }
 }

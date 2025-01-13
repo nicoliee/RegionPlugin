@@ -12,6 +12,7 @@ import org.ttchampagne.regionplugin.commands.CapitanesCommand;
 import org.ttchampagne.regionplugin.commands.ListaCommand;
 import org.ttchampagne.regionplugin.commands.TorneoCommand;
 import org.ttchampagne.regionplugin.commands.TablaCommand;
+import org.ttchampagne.regionplugin.commands.InstancesCommand;
 import org.ttchampagne.regionplugin.listeners.TorneoListeners;
 import org.ttchampagne.regionplugin.commands.RegionPluginCommand;
 import org.ttchampagne.regionplugin.commands.RegionCommand;
@@ -62,6 +63,7 @@ public class RegionPlugin extends JavaPlugin {
         new TorneoCommand(this, torneoListeners);
         getCommand("capitanes").setExecutor(new CapitanesCommand(this));
         getCommand("tabla").setExecutor(new TablaCommand(this));
+        getCommand("instances").setExecutor(new InstancesCommand(this));
         getCommand("lista").setExecutor(new ListaCommand(this));
         this.getCommand("region").setExecutor(new RegionCommand(this));
         this.getCommand("RegionPlugin").setExecutor(new RegionPluginCommand(this));

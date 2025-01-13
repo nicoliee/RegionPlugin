@@ -53,7 +53,7 @@ public class TablaCommand implements CommandExecutor {
 
         if (!globalConfigFile.exists()) {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.tables_file_not_found")));
+                    plugin.getMessagesConfig().getString("messages.file_not_found")));
             return true;
         }
 

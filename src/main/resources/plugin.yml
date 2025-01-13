@@ -23,4 +23,7 @@ commands:
   tabla:
     description: Comando para gestionar tablas de la base de datos.
     usage: /<command> 
+  instances:
+    description: Comando para gestionar las instancias.
+    usage: /<command> <number>
 
