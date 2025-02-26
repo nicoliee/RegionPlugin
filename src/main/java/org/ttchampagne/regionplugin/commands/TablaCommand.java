@@ -79,7 +79,7 @@ public class TablaCommand implements CommandExecutor {
 
         player.sendMessage(ChatColor.translateAlternateColorCodes('&',
             plugin.getMessagesConfig().getString("messages.tables_set"))
-            .replace("{tables}", String.join(", ", tables))); // Mensaje dinámico con tablas configuradas
+            .replace("{tables}", String.join(", ", tables)));
 
         return true;
     }

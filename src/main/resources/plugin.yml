@@ -11,6 +11,10 @@ commands:
     description: Asigna capitanes a un equipo.
     usage: /<command>
     aliases: [captains, picks]
+  reroll:
+    description: Reroll de capitanes.
+    usage: /<command>
+    aliases: [rr]
   lista:
     description: Muestra la lista de jugadores en equipos.
     usage: /<command>
@@ -26,4 +30,7 @@ commands:
   instances:
     description: Comando para gestionar las instancias.
     usage: /<command> <number>
+  map:
+    description: Comando para hacer tp a un mapa.
+    usage: /<command> <mapa>
 

@@ -5,13 +5,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.BlockPistonExtendEvent;
-import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -23,6 +22,7 @@ import org.ttchampagne.regionplugin.Region;
 import org.ttchampagne.regionplugin.RegionPlugin;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class TorneoListeners implements Listener{
@@ -83,45 +83,30 @@ public class TorneoListeners implements Listener{
     }
 
     @EventHandler
-    // Logica para la extensión de pistones
-    public void onPistonExtend(BlockPistonExtendEvent event) {
-        String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-        if (isProtectionActive != null && isProtectionActive) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    // Logica para la retracción de pistones
-    public void onPistonRetract(BlockPistonRetractEvent event) {
-        String worldName = event.getBlock().getWorld().getName();
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-        if (isProtectionActive != null && isProtectionActive) {
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
     // Que debe pasar cuando el jugador muera dentro del tiempo de preparación
     public void onPlayerRespawn(PlayerRespawnEvent event) {
         Player player = event.getPlayer();
         String worldName = player.getWorld().getName();
         // Verifica si hay un valor de protección para el mundo y si está activo
-        Boolean isProtectionActive = worldProtectionStatus.get(worldName);
-        if (isProtectionActive == null || !isProtectionActive) {
+        if (!isProtectionActive(worldName)) {
             return; // Si no hay protección activa, no hacer nada
         }
-        int remainingTime = protectionTimeRemaining.getOrDefault(worldName, 0);
+        int remainingTime = getProtectionTimer(worldName); // Obtener el tiempo restante de preparación
         if (remainingTime > 0) {
-            applyRegenerationEffect(worldName, remainingTime); // Aplicar Regeneración si queda tiempo de preparación
-            // Verificar si queda tiempo de Haste II
-            int remainingHasteTime = hasteTimerRemaining.getOrDefault(worldName, 0);
-            if (remainingHasteTime > 0) {
-                applyHasteEffect(worldName, remainingHasteTime); // Aplicar el tiempo restante de Haste II
-            }
+            Bukkit.getScheduler().runTaskLater(plugin, new Runnable() {
+                @Override
+                public void run() {
+                    applyRegenerationEffect(worldName, remainingTime); // Aplicar Regeneración si queda tiempo de preparación
+                    // Verificar si queda tiempo de Haste II
+                    int remainingHasteTime = getHasteTimer(worldName);
+                    if (remainingHasteTime > 0) {
+                        applyHasteEffect(worldName, remainingHasteTime); // Aplicar el tiempo restante de Haste II
+                    }
+                }
+            }, 5L);
         }
     }
+
     @EventHandler
     public void onPlayerChangeWorld(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
@@ -151,6 +136,7 @@ public class TorneoListeners implements Listener{
         String worldName = event.getWorld().getName();
         privateModeMap.put(worldName, false); // Desactivar el modo privado
     }
+
     // Verificar si el jugador tiene armadura de cuero
     private boolean tieneArmadura(Player player) {
         for (ItemStack armorPiece : player.getInventory().getArmorContents()) {
@@ -215,10 +201,10 @@ public class TorneoListeners implements Listener{
                     }                              
                 } else {
                     // Tiempo de preparación terminado
+                    executeFinishCommands(worldName); // Ejecutar comandos al terminar el tiempo de preparación
                     worldProtectionStatus.put(worldName, false);
                     protectionTimers.remove(worldName);
                     protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
-                    removeHasteEffect(worldName);
                     sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                     .getString("messages.preparation_ended")));
                     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
@@ -268,6 +254,7 @@ public class TorneoListeners implements Listener{
             protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
             removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
             removeHasteEffect(worldName); // Eliminar el efecto de Haste II
+            executeFinishCommands(worldName); // Ejecutar comandos al terminar el tiempo de preparación
             sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                     .getString("messages.preparation_cancelled")));
                     Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
@@ -275,6 +262,15 @@ public class TorneoListeners implements Listener{
         } else {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&',
             ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation_cancelled_error"))));
+        }
+    }
+
+    // Ejecutar comandos al terminar el tiempo de preparación
+    public void executeFinishCommands(String worldName) {
+        FileConfiguration config = plugin.getConfig();
+        List<String> commands = config.getStringList("finishCommands");
+        for (String command : commands) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command + " " + worldName);
         }
     }
 
@@ -331,5 +327,13 @@ public class TorneoListeners implements Listener{
     // Método para verificar si el tiempo de preparación está activo
     public boolean isProtectionActive(String worldName) {
         return worldProtectionStatus.getOrDefault(worldName, false);
+    }
+
+    public int getProtectionTimer(String worldName) {
+        return protectionTimeRemaining.getOrDefault(worldName, 0);
+    }
+
+    public int getHasteTimer(String worldName) {
+        return hasteTimerRemaining.getOrDefault(worldName, 0);
     }
 }

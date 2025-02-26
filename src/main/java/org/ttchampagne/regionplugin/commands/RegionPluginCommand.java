@@ -85,6 +85,9 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
                 }
                 sender.sendMessage("§8[§bRegionPlugin§8] §aThe configuration files have been successfully downloaded and extracted.");
                 return true;
+            }else if (args[0].equalsIgnoreCase("serverStop")) {
+                plugin.getServer().shutdown();
+                return true;
             } else {
                 sender.sendMessage(ChatColor.RED + "Use /RegionPlugin <configreplace|messagesreload|reload|update>");
                 return true;
@@ -147,7 +150,7 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             // Lista de opciones posibles
-            List<String> options = Arrays.asList("configreplace", "messagesreload", "reload", "update");
+            List<String> options = Arrays.asList("configReplace", "messagesReload", "reload", "update", "serverStop");
 
             // Filtrar las opciones que comienzan con el texto ingresado por el usuario
             String input = args[0].toLowerCase();

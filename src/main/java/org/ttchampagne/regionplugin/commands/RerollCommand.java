@@ -1,4 +1,8 @@
 package org.ttchampagne.regionplugin.commands;
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -9,22 +13,15 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.ttchampagne.regionplugin.RegionPlugin;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-
-public class CapitanesCommand implements CommandExecutor {
-
+public class RerollCommand implements CommandExecutor {
     private final RegionPlugin plugin;
-
-    public CapitanesCommand(RegionPlugin plugin) {
+    public RerollCommand(RegionPlugin plugin) {
         this.plugin = plugin;
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (command.getName().equalsIgnoreCase("capitanes")) {
+        if (command.getName().equalsIgnoreCase("reroll")) {
             // Verificar que el sender sea un jugador
             if (!(sender instanceof Player)) {
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
@@ -72,7 +69,7 @@ public class CapitanesCommand implements CommandExecutor {
                         plugin.getMessagesConfig().getString("messages.captains_updated")));
 
                 // Ejecutar comando para recargar configuración
-                String reloadCommand = String.format("tt reloadconfig game_settings %s", worldName);
+                String reloadCommand = String.format("tt picks newCaptains");
                 player.performCommand(reloadCommand);
 
             } catch (IOException e) {
@@ -83,5 +80,6 @@ public class CapitanesCommand implements CommandExecutor {
             return true;
         }
         return false;
-    }
+    } 
 }
+

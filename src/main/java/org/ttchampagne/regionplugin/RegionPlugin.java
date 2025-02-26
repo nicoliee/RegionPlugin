@@ -12,10 +12,12 @@ import org.ttchampagne.regionplugin.commands.CapitanesCommand;
 import org.ttchampagne.regionplugin.commands.ListaCommand;
 import org.ttchampagne.regionplugin.commands.TorneoCommand;
 import org.ttchampagne.regionplugin.commands.TablaCommand;
+import org.ttchampagne.regionplugin.commands.RerollCommand;
 import org.ttchampagne.regionplugin.commands.InstancesCommand;
 import org.ttchampagne.regionplugin.listeners.TorneoListeners;
 import org.ttchampagne.regionplugin.commands.RegionPluginCommand;
 import org.ttchampagne.regionplugin.commands.RegionCommand;
+import org.ttchampagne.regionplugin.commands.MapCommand;
 
 import java.io.File;
 import java.util.HashMap;
@@ -62,9 +64,11 @@ public class RegionPlugin extends JavaPlugin {
         // Registrar el comando /torneo
         new TorneoCommand(this, torneoListeners);
         getCommand("capitanes").setExecutor(new CapitanesCommand(this));
+        getCommand("reroll").setExecutor(new RerollCommand(this));
         getCommand("tabla").setExecutor(new TablaCommand(this));
         getCommand("instances").setExecutor(new InstancesCommand(this));
         getCommand("lista").setExecutor(new ListaCommand(this));
+        getCommand("map").setExecutor(new MapCommand());
         this.getCommand("region").setExecutor(new RegionCommand(this));
         this.getCommand("RegionPlugin").setExecutor(new RegionPluginCommand(this));
         // Reinicio inicial de variables
