@@ -70,7 +70,10 @@ public class RerollCommand implements CommandExecutor {
 
                 // Ejecutar comando para recargar configuración
                 String reloadCommand = String.format("tt picks newCaptains");
+                String reloadConfig = String.format("tt reloadconfig game_settings %s", worldName);
+                player.performCommand(reloadConfig);
                 player.performCommand(reloadCommand);
+
 
             } catch (IOException e) {
                 player.sendMessage(ChatColor.translateAlternateColorCodes('&',

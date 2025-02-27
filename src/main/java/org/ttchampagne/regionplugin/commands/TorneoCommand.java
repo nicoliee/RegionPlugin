@@ -1,12 +1,15 @@
 package org.ttchampagne.regionplugin.commands;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.ttchampagne.regionplugin.RegionPlugin;
 import org.ttchampagne.regionplugin.listeners.TorneoListeners;
 import org.bukkit.command.TabCompleter;
@@ -61,9 +64,32 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                         player.sendMessage(ChatColor.RED + "/torneo add {command}");
                     }
                 } else if (args[0].equalsIgnoreCase("on")) { // /torneo on
-                    handleTournamentOn(player, worldName); // Iniciar la protección de bloques
-                } else if (args[0].equalsIgnoreCase("finishAdd")) { // /torneo finishAdd {comando}
-                    if (args.length >= 2) {
+                    new BukkitRunnable() {
+                        private int elapsedTime = 0;
+                        
+                        @Override
+                        public void run() {
+                            if (!player.isOnline()) { // Si el jugador se desconecta, detener el Runnable
+                                this.cancel();
+                                return;
+                            }
+                            
+                            if (elapsedTime >= 1200) { // 10 minutos (1200 ticks)
+                                this.cancel();
+                                return;
+                            }
+                            
+                            ItemStack helmet = player.getInventory().getHelmet();
+                            if (helmet != null && helmet.getType() == Material.LEATHER_HELMET) {
+                                handleTournamentOn(player, worldName);
+                                this.cancel(); // Detener la tarea una vez que se ha ejecutado
+                            }
+                            
+                            elapsedTime += 10; // Incrementar el tiempo transcurrido
+                        }
+                    }.runTaskTimer(plugin, 0L, 10L); // Ejecutar cada 10 ticks (0.5 segundos)
+                }else if (args[0].equalsIgnoreCase("finishAdd")) { // /torneo finishAdd {comando}
+                                    if (args.length >= 2) {
                         handleTournamentFinishAdd(player, args); // Añadir un comando a la lista de finalización
                     } else {
                         player.sendMessage(ChatColor.RED + "/torneo finishAdd {command}");
@@ -290,8 +316,8 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
             message = message.replace("{mins}", String.valueOf(hasteTime)); // Reemplazar el marcador {mins}
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
         }
-        preparationTime *= 60; // Convertir minutos a segundos
-        hasteTime *= 60; // Convertir minutos a segundos
+        preparationTime = preparationTime * 60 + 1; // Convertir minutos a segundos y sumar 1 segundo
+        hasteTime = hasteTime * 60 + 1; // Convertir minutos a segundos y sumar 1 segundo
         torneoListeners.startProtectionTimer(worldName, player, preparationTime, hasteTime); // Iniciar el temporizador de protección
     }
 }

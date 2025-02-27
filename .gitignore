@@ -26,3 +26,4 @@ replay_pid*
 /target/
 /.idea/
 /.vscode
+dependency-reduced-pom.xml

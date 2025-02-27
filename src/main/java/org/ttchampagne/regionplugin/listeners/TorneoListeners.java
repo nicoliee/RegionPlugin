@@ -20,6 +20,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.ttchampagne.regionplugin.Region;
 import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 
 import java.util.HashMap;
 import java.util.List;
@@ -168,6 +169,7 @@ public class TorneoListeners implements Listener{
         applyHasteEffect(worldName, hasteDuration); // Aplicar Haste II solo por la duración calculada
         BukkitRunnable task = new BukkitRunnable() {
             private int secondsElapsed = 0;
+            String sound = "random.click";
             @Override
             public void run() {
                 secondsElapsed++;
@@ -178,26 +180,18 @@ public class TorneoListeners implements Listener{
                     if (timeRemaining % 60 == 0) {
                         // Si el tiempo es divisible dentro de 60 y es mayor a 0 mostrará un mensaje con el tiempo faltante
                         int minutesRemaining = timeRemaining / 60;
-                        sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
                         .getString("messages.preparation_minutes_left")
-                        .replace("{minutes}", String.valueOf(minutesRemaining))));
-                        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                            if (onlinePlayer.getWorld().getName().equals(worldName)) {
-                                onlinePlayer.playSound(onlinePlayer.getLocation(), "random.click", 1.0f, 2.0f);
-                            }
-                        }
-                    } else if (timeRemaining == 30 || timeRemaining == 10 || (timeRemaining <= 4 && timeRemaining >= 1)) {
+                        .replace("{minutes}", String.valueOf(minutesRemaining)));
+                        SendMessage.soundToWorld(worldName, sound);
+                    } else if (timeRemaining == 30 || timeRemaining == 10 || (timeRemaining <= 5 && timeRemaining >= 1)) {
                         // Si el tiempo restante son 30, 10, 5, 4, 3, 2, 1 segundos mostrará un mensaje
-                        sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
                         .getString("messages.preparation_seconds_left")
-                        .replace("{seconds}", String.valueOf(timeRemaining))));
+                        .replace("{seconds}", String.valueOf(timeRemaining)));
                     } if (timeRemaining <= 30) {
                         // Reproducir un sonido de alerta si el tiempo restante es menor o igual a 30 segundos
-                        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-                            if (onlinePlayer.getWorld().getName().equals(worldName)) {
-                                onlinePlayer.playSound(onlinePlayer.getLocation(), "random.click", 1.0f, 2.0f);
-                            }
-                        }
+                        SendMessage.soundToWorld(worldName, sound);
                     }                              
                 } else {
                     // Tiempo de preparación terminado
@@ -205,12 +199,11 @@ public class TorneoListeners implements Listener{
                     worldProtectionStatus.put(worldName, false);
                     protectionTimers.remove(worldName);
                     protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
-                    sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
-                    .getString("messages.preparation_ended")));
+                    SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
+                    .getString("messages.preparation_ended"));
                     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                         if (onlinePlayer.getWorld().getName().equals(worldName)) {
                             Sound sound;
-                    
                             try {
                                 // Intentamos usar el sonido para versiones modernas
                                 sound = Sound.valueOf("ENTITY_ENDERDRAGON_GROWL");
@@ -239,9 +232,9 @@ public class TorneoListeners implements Listener{
         Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                         .getString("messages.preparation_started")
                         .replace("{minutes}", String.valueOf(preparationTimeinMinutes))));
-        sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
+                        SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
                         .getString("messages.preparation_started")
-                        .replace("{minutes}", String.valueOf(preparationTimeinMinutes))));
+                        .replace("{minutes}", String.valueOf(preparationTimeinMinutes)));
     }
 
     // Detener la protección de bloques
@@ -255,8 +248,8 @@ public class TorneoListeners implements Listener{
             removeRegenerationEffect(worldName); // Eliminar el efecto Regeneración si se detiene el tiempo de preparación
             removeHasteEffect(worldName); // Eliminar el efecto de Haste II
             executeFinishCommands(worldName); // Ejecutar comandos al terminar el tiempo de preparación
-            sendMessageToWorldPlayers(worldName, ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
-                    .getString("messages.preparation_cancelled")));
+            SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
+                    .getString("messages.preparation_cancelled"));
                     Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
                     .getString("messages.preparation_cancelled")));
         } else {
@@ -306,15 +299,6 @@ public class TorneoListeners implements Listener{
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             if (onlinePlayer.getWorld().getName().equals(worldName)) {
                 onlinePlayer.removePotionEffect(PotionEffectType.REGENERATION);
-            }
-        }
-    }
-    
-    // Función para mandar mensaje a los jugadores
-    private void sendMessageToWorldPlayers(String worldName, String message) {
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            if (onlinePlayer.getWorld().getName().equals(worldName)) {
-                onlinePlayer.sendMessage(ChatColor.YELLOW + message);
             }
         }
     }
