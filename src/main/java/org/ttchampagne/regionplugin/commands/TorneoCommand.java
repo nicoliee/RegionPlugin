@@ -45,6 +45,7 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                 // Si no se proporcionan argumentos, ejecutar el comando principal
                 if (args.length == 0) {
                     executeTournamentCommands(player); // Ejecutar los comandos de torneo
+                    checkForStart(player, worldName);
                     return true;
                 }
     
@@ -63,31 +64,6 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                     } else {
                         player.sendMessage(ChatColor.RED + "/torneo add {command}");
                     }
-                } else if (args[0].equalsIgnoreCase("on")) { // /torneo on
-                    new BukkitRunnable() {
-                        private int elapsedTime = 0;
-                        
-                        @Override
-                        public void run() {
-                            if (!player.isOnline()) { // Si el jugador se desconecta, detener el Runnable
-                                this.cancel();
-                                return;
-                            }
-                            
-                            if (elapsedTime >= 1200) { // 10 minutos (1200 ticks)
-                                this.cancel();
-                                return;
-                            }
-                            
-                            ItemStack helmet = player.getInventory().getHelmet();
-                            if (helmet != null && helmet.getType() == Material.LEATHER_HELMET) {
-                                handleTournamentOn(player, worldName);
-                                this.cancel(); // Detener la tarea una vez que se ha ejecutado
-                            }
-                            
-                            elapsedTime += 10; // Incrementar el tiempo transcurrido
-                        }
-                    }.runTaskTimer(plugin, 0L, 10L); // Ejecutar cada 10 ticks (0.5 segundos)
                 }else if (args[0].equalsIgnoreCase("finishAdd")) { // /torneo finishAdd {comando}
                                     if (args.length >= 2) {
                         handleTournamentFinishAdd(player, args); // Añadir un comando a la lista de finalización
@@ -102,6 +78,7 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                     }
                 } else if (args[0].equalsIgnoreCase("off")) { // /torneo off
                     torneoListeners.stopProtectionTimer(worldName, player); // Detener la protección de bloques
+
                 } else if (args[0].equalsIgnoreCase("help")) { // /torneo help
                     // Mostrar la lista de comandos disponibles
                     player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
@@ -113,7 +90,6 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo finishDelete {numero} " + ChatColor.GRAY + "- Elimina un comando de la lista de finalización.");
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo list " + ChatColor.GRAY + "- Muestra la lista de comandos de torneo.");
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo off " + ChatColor.GRAY + "- Detiene la protección de bloques en el mundo actual.");
-                    player.sendMessage(" " + ChatColor.YELLOW + "/torneo on " + ChatColor.GRAY + "- Inicia la protección de bloques en el mundo actual.");
                 } else {
                     // Subcomando no reconocido
                     player.sendMessage(ChatColor.RED + "/torneo <add/delete/list/on/off/help>");
@@ -132,7 +108,7 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             // Lista de opciones posibles
-            List<String> options = Arrays.asList("add", "delete", "finishAdd", "finishDelete", "list", "off", "on", "help");
+            List<String> options = Arrays.asList("add", "delete", "finishAdd", "finishDelete", "list", "off", "help");
 
             // Filtrar las opciones que comienzan con el texto ingresado por el usuario
             String input = args[0].toLowerCase();
@@ -285,6 +261,31 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
                     plugin.getMessagesConfig().getString("messages.tournament_delete_invalid_number_usage")));
         }
+    }
+
+    private void checkForStart(Player player, String worldName) {
+        new BukkitRunnable() {
+            private int elapsedTime = 0;
+            @Override
+            public void run() {
+                if (!player.isOnline()) { // Si el jugador se desconecta, detener el Runnable
+                    this.cancel();
+                    return;
+                }
+                
+                if (elapsedTime >= 1200) { // 10 minutos (1200 ticks)
+                    this.cancel();
+                    return;
+                }
+                
+                ItemStack helmet = player.getInventory().getHelmet();
+                if (helmet != null && helmet.getType() == Material.LEATHER_HELMET) {
+                    handleTournamentOn(player, worldName);
+                    this.cancel(); // Detener la tarea una vez que se ha ejecutado
+                }
+                elapsedTime += 10; // Incrementar el tiempo transcurrido
+            }
+        }.runTaskTimer(plugin, 0, 10); // Ejecutar cada 10 ticks (0.5 segundos)
     }
 
     // Manejar el comando /torneo on
