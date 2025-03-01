@@ -11,6 +11,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.world.WorldLoadEvent;
@@ -51,6 +53,25 @@ public class TorneoListeners implements Listener{
         this.privateModeMap = privateModeMap != null ? privateModeMap : new HashMap<>();
     }
 
+    @EventHandler
+    public void onPrepareItemCraft(PrepareItemCraftEvent e) {
+        ItemStack result = e.getInventory().getResult();
+
+        if (result != null && (result.getType() == Material.FISHING_ROD || result.getType() == Material.ARMOR_STAND)) {
+            e.getInventory().setResult(null); // Bloquea el crafteo
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClick(final InventoryClickEvent e) {
+        ItemStack clickedItem = e.getCurrentItem();
+
+        if (clickedItem != null && (clickedItem.getType() == Material.FISHING_ROD || clickedItem.getType() == Material.ARMOR_STAND)) {
+            e.setCancelled(true); // Bloquea la acción
+            e.getWhoClicked().closeInventory();
+        }
+    }
+    
     @EventHandler
     // Logica para la protección de bloques
     public void onBlockPlace(BlockPlaceEvent event) {
