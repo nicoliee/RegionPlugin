@@ -259,12 +259,11 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                     this.cancel();
                     return;
                 }
-                
-                if (elapsedTime >= 1200) { // 10 minutos (1200 ticks)
+
+                if (elapsedTime >= 36000) { // 30 minutos (36000 ticks)
                     this.cancel();
                     return;
                 }
-                
                 ItemStack helmet = player.getInventory().getHelmet();
                 if (helmet != null && helmet.getType() == Material.LEATHER_HELMET) {
                     handleTournamentOn(player, worldName);
@@ -273,7 +272,7 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                 elapsedTime += 10; // Incrementar el tiempo transcurrido
             }
         }.runTaskTimer(plugin, 0, 10); // Ejecutar cada 10 ticks (0.5 segundos)
-    }
+    }    
 
     // Manejar el comando /torneo on
     private void handleTournamentOn(Player player, String worldName) {
