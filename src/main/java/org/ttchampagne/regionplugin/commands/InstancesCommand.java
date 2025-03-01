@@ -1,6 +1,5 @@
 package org.ttchampagne.regionplugin.commands;
 
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -8,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,29 +26,25 @@ public class InstancesCommand implements CommandExecutor {
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.no_player")));
+            sender.sendMessage(plugin.getErrorMessage("errors.no_player"));
             return true;
         }
 
         Player player = (Player) sender;
 
         if (!(player.hasPermission("towers.admin") || player.isOp())) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.no_permission")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("errors.no_permission"));
             return true;
         }
 
         if (args.length < 1) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.instances_specify_number")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("instances.usage"));
             return true;
         }
 
         String input = args[0];
         if (!input.matches("\\d+")) { // Verifica que el argumento sea un número entero positivo
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.instances_specify_number")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("instances.usage"));
             return true;
         }
 
@@ -57,8 +53,7 @@ public class InstancesCommand implements CommandExecutor {
         // Carga el archivo globalConfig.yml
         File configFile = new File(plugin.getDataFolder().getParentFile(), "AmazingTowers/globalConfig.yml");
         if (!configFile.exists()) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.file_not_found")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("errors.file_not_found"));
             return true;
         }
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -68,11 +63,9 @@ public class InstancesCommand implements CommandExecutor {
 
         try {
             config.save(configFile); // Guarda los cambios en el archivo
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.instances_set").replace("{instances}", String.valueOf(number))));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("instances.set").replace("{instances}", String.valueOf(number)));
         } catch (IOException e) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.instances_error")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("instances.error"));
             e.printStackTrace();
         }
 

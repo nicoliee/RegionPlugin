@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.ttchampagne.regionplugin.RegionPlugin;
 import org.ttchampagne.regionplugin.listeners.TorneoListeners;
+import org.ttchampagne.utils.SendMessage;
 import org.bukkit.command.TabCompleter;
 
 import java.io.File;
@@ -32,11 +33,9 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
         if (command.getName().equalsIgnoreCase("torneo")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;
-    
                 // Verificar permiso "towers.admin"
                 if (!player.hasPermission("towers.admin")) {
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                            plugin.getMessagesConfig().getString("messages.no_permission")));
+                    SendMessage.sendToPlayer(player, plugin.getErrorMessage("messages.no_permission"));
                     return true;
                 }
     
@@ -44,8 +43,8 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
     
                 // Si no se proporcionan argumentos, ejecutar el comando principal
                 if (args.length == 0) {
-                    executeTournamentCommands(player); // Ejecutar los comandos de torneo
-                    checkForStart(player, worldName);
+                    checkForStart(player, worldName); // Verificar si el jugador tiene un casco de cuero
+                    executeTournamentCommands(player, worldName); // Ejecutar los comandos de torneo
                     return true;
                 }
     
@@ -81,8 +80,6 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
 
                 } else if (args[0].equalsIgnoreCase("help")) { // /torneo help
                     // Mostrar la lista de comandos disponibles
-                    player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                            plugin.getMessagesConfig().getString("messages.help_header")));
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo " + ChatColor.GRAY + "- Ejecuta los comandos de torneo.");
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo add {comando} " + ChatColor.GRAY + "- Añade un comando a la lista de torneo.");
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo delete {numero} " + ChatColor.GRAY + "- Elimina un comando de la lista de torneo.");
@@ -92,12 +89,12 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
                     player.sendMessage(" " + ChatColor.YELLOW + "/torneo off " + ChatColor.GRAY + "- Detiene la protección de bloques en el mundo actual.");
                 } else {
                     // Subcomando no reconocido
-                    player.sendMessage(ChatColor.RED + "/torneo <add/delete/list/on/off/help>");
+                    player.sendMessage(ChatColor.RED + "/torneo <add/delete/list/off/help>");
                 }
                 return true;
             } else {
                 sender.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                        plugin.getMessagesConfig().getString("messages.no_player")));
+                        plugin.getErrorMessage("errors.no_player")));
                 return true;
             }
         }
@@ -125,41 +122,39 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
 
     
     // Manejar comando /torneo
-    private void executeTournamentCommands(Player player) {
+    private void executeTournamentCommands(Player player, String worldName) {
         // se revisa en "config.yml" los comandos que debe ejecutar el jugador
         FileConfiguration config = plugin.getConfig();
         List<String> commands = config.getStringList("commands");
+        if (!config.contains(worldName)) {
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("region.worldError"));
+            return;
+        }
         for (String cmd : commands) {
             player.performCommand(cmd);
         }
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                plugin.getMessagesConfig().getString("messages.tournament_rules_activated")));
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.start"));
     }
 
     // Manejar el comando /torneo list
     private void listTournamentCommands(Player player) {
         FileConfiguration config = plugin.getConfig();
         List<String> commands = config.getStringList("commands");
-
         if (commands.isEmpty()) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getMessagesConfig().getString("messages.tournament_list_no_commands")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.empty"));
             return;
         }
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                plugin.getMessagesConfig().getString("messages.tournament_list_commands")));
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.list"));
         for (int i = 0; i < commands.size(); i++) {
             player.sendMessage(" " + ChatColor.GREEN + String.valueOf(i + 1) + ". " + ChatColor.AQUA + commands.get(i));
         }
         List<String> finishCommands = config.getStringList("finishCommands");
         if (finishCommands.isEmpty()) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getMessagesConfig().getString("messages.tournament_list_no_commands")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.empty"));
             return;
         }
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                plugin.getMessagesConfig().getString("messages.tournament_list_finish_commands")));
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.finishList"));
         for (int i = 0; i < finishCommands.size(); i++) {
             player.sendMessage(" " + ChatColor.GREEN + String.valueOf(i + 1) + ". " + ChatColor.AQUA + finishCommands.get(i));
         }
@@ -174,8 +169,7 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
             List<String> commands = config.getStringList("commands"); // Obtener la lista de comandos
 
             if (index < 0 || index >= commands.size()) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                        plugin.getMessagesConfig().getString("messages.tournament_delete_invalid_number:")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.usage"));
                 return;
             }
 
@@ -183,12 +177,10 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
             config.set("commands", commands); // Actualizar la lista de comandos
             plugin.saveConfig(); // Guardar el archivo de configuración
 
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-            plugin.getMessagesConfig().getString("messages.tournament_delete_command_deleted")
-            .replace("{command}", removedCommand)));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.delete")
+                    .replace("{command}", removedCommand));
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getMessagesConfig().getString("messages.tournament_delete_invalid_number_usage")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.usage"));
         }
     }
 
@@ -209,9 +201,8 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
         config.set("commands", commands);
         plugin.saveConfig();
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-            plugin.getMessagesConfig().getString("messages.tournament_add_command_added")
-            .replace("{command}", newCommand)));
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.add")
+                .replace("{command}", newCommand));
     }
 
     // Manejar el comando /torneo finishAdd
@@ -231,9 +222,8 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
         config.set("finishCommands", commands);
         plugin.saveConfig();
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-            plugin.getMessagesConfig().getString("messages.tournament_add_command_added")
-            .replace("{command}", newCommand)));
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.add")
+                .replace("{command}", newCommand));
     }
 
     // Manejar el comando /torneo finishDelete
@@ -245,8 +235,7 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
             List<String> commands = config.getStringList("finishCommands"); // Obtener la lista de comandos
 
             if (index < 0 || index >= commands.size()) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                        plugin.getMessagesConfig().getString("messages.tournament_delete_invalid_number:")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.usage"));
                 return;
             }
 
@@ -254,12 +243,10 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
             config.set("finishCommands", commands); // Actualizar la lista de comandos
             plugin.saveConfig(); // Guardar el archivo de configuración
 
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-            plugin.getMessagesConfig().getString("messages.tournament_delete_command_deleted")
-            .replace("{command}", removedCommand)));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.delete")
+                    .replace("{command}", removedCommand));
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getMessagesConfig().getString("messages.tournament_delete_invalid_number_usage")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.usage"));
         }
     }
 
@@ -290,32 +277,25 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
 
     // Manejar el comando /torneo on
     private void handleTournamentOn(Player player, String worldName) {
-        torneoListeners.setPrivateMode(worldName, true); // Activar el modo privado
         // Cargar el archivo de configuración
         File configFile = new File(plugin.getDataFolder(), "config.yml");
         FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+        
         // Obtener el tiempo de preparación desde el config.yml
         int preparationTime = 4; // Valor predeterminado de 4 minutos
         int hasteTime = 2; // Valor predeterminado de 2 minutos
         // Verificar si el mundo está configurado
-        if (!config.contains(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
-            return;
-        }
+        
+        torneoListeners.setPrivateMode(worldName, true); // Activar el modo privado
         if (config.contains(worldName + ".Timer")) {
             preparationTime = config.getInt(worldName + ".Timer"); // Obtener el tiempo de preparación
         } else {
-            String message = plugin.getMessagesConfig().getString("messages.tournament_on_no_preparation_time");
-            message = message.replace("{mins}", String.valueOf(preparationTime)); // Reemplazar el marcador {mins}
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.defaultTimer"));
         }
         if (config.contains(worldName + ".Haste")) {
             hasteTime = config.getInt(worldName + ".Haste"); // Obtener el tiempo de haste
         } else {
-            String message = plugin.getMessagesConfig().getString("messages.tournament_on_no_haste_time");
-            message = message.replace("{mins}", String.valueOf(hasteTime)); // Reemplazar el marcador {mins}
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&', message));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tournament.defaultHaste"));
         }
         preparationTime = preparationTime * 60 + 1; // Convertir minutos a segundos y sumar 1 segundo
         hasteTime = hasteTime * 60 + 1; // Convertir minutos a segundos y sumar 1 segundo

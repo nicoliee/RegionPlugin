@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 
 public class TablaCommand implements CommandExecutor {
     private final RegionPlugin plugin;
@@ -26,22 +26,19 @@ public class TablaCommand implements CommandExecutor {
         }
 
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.no_player")));
+            SendMessage.sendToPlayer((Player) sender, plugin.getErrorMessage("errors.no_player"));
             return true;
         }
 
         Player player = (Player) sender;
 
         if (!(player.hasPermission("towers.admin") || player.isOp())) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.no_permission")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("errors.no_permission"));
             return true;
         }
 
         if (args.length < 1) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.tables_specify_table")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tables.usage"));
             return true;
         }
 
@@ -52,8 +49,7 @@ public class TablaCommand implements CommandExecutor {
                     .getDataFolder() + "/globalConfig.yml"); // Ruta al archivo
 
         if (!globalConfigFile.exists()) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    plugin.getMessagesConfig().getString("messages.file_not_found")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("errors.file_not_found"));
             return true;
         }
 
@@ -63,8 +59,7 @@ public class TablaCommand implements CommandExecutor {
         if (globalConfig.contains("options.database.tableNames")) {
             globalConfig.set("options.database.tableNames", tables);
         } else {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                plugin.getMessagesConfig().getString("messages.tables_error")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tables.error"));
             return true;
         }
 
@@ -72,15 +67,12 @@ public class TablaCommand implements CommandExecutor {
             globalConfig.save(globalConfigFile);
         } catch (IOException e) {
             plugin.getLogger().severe("Error al guardar el archivo globalConfig.yml: " + e.getMessage());
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                plugin.getMessagesConfig().getString("messages.tables_error")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("tables.error"));
             return true;
         }
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-            plugin.getMessagesConfig().getString("messages.tables_set"))
-            .replace("{tables}", String.join(", ", tables)));
-
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("tables.success")
+                .replace("{tables}", String.join(", ", tables)));
         return true;
     }
 }

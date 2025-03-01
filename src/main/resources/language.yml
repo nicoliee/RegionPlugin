@@ -1,0 +1,126 @@
+messages:
+  en:
+    errors:
+      no_player: "This command can only be executed by a player."
+      no_permission: "&cYou do not have permission to use this command."
+    captains:
+      usage: "&cSpecify at least 2 players who will be captains."
+      no_settings: "&cFile not found. Make sure you are in a game."
+      error: "&cError saving the file."
+      success: "&aCaptains updated."
+    instances:
+      usage: "&cSpecify a valid number."
+      set: "&aInstances set to: {instances}."
+      error: "&cError saving instances."
+    region:
+      usage: "&cEnter a valid number."
+      timerSet: "&aTimer set to &e{timer}&a minutes."
+      hasteSet: "&aHaste timer set to &e{timer} &aminutes."
+      worldAlreadyAdded: "&aThe world is already configured."
+      worldError: "&cThis world is not configured. Use &e/region add&c first."
+      worldSuccess: "&aWorld added with default values."
+      worldDeleted: "&aWorld deleted."
+      WorldsNotFound: "&cNo worlds configured. Use &e/region add&c first."
+      header: "&eConfigured worlds and their details:"
+      minSet: "&aMinimum coordinates set. [X: {x}, Y: {y}, Z: {z}]"
+      maxSet: "&aMaximum coordinates set [X: {x} Y: {y}, Z: {z}]."
+    language:
+      set: "&aLanguage changed to English."
+    update:
+      start: "§8[§bRegionPlugin§8] &aChecking for available updates..."
+      no_updates: "§8[§bRegionPlugin§8] &cNo updates available."
+      found: "§8[§bRegionPlugin§8] &aA new update has been found. Update now."
+    reload:
+      start: "§8[§bRegionPlugin§8] &aReloading the plugin..."
+      success: "§8[§bRegionPlugin§8] &aThe plugin has been successfully reloaded."
+    messages:
+      reloadStart: "§8[§bRegionPlugin§8] &aReloading messages..."
+      reloadError: "§8[§bRegionPlugin§8] &cError reloading messages."
+      reloadSuccess: "§8[§bRegionPlugin§8] &aMessages successfully reloaded."
+    configReplace:
+      start: "§8[§bRegionPlugin§8] §aDownloading configuration file..."
+      error: "§8[§bRegionPlugin§8] §cError downloading the configuration file."
+      success: "§8[§bRegionPlugin§8] §aFile downloaded successfully."
+    tables:
+      usage: "&cSpecify a valid table."
+      error: "&cError saving the table."
+      success: "&aTables configured: {tables}"
+    tournament:
+      usage: "&cInvalid number. Use /tournament list to see valid numbers."
+      empty: "&cNo tournaments configured."
+      list: "&aConfigured commands:"
+      finishList: "&aConfigured commands at the end of the preparation time:"
+      add: "&aCommand added: {command}"
+      delete: "&aCommand deleted: {command}"
+      noTimer: "&cPreparation time not found in the configuration file, using the default value of {mins} minutes."
+      noHaste: "&cHaste time not found in the configuration file, using the default value of {mins} minutes."
+      start: "&aConfigured commands"
+      defaultTimer: "&cPreparation time not set. Using default."
+      defaultHaste: "&cHaste time not set. Using default."
+    preparation:
+      alreadyStarted: "&cProtection is already active in this world."
+      notStarted: "&cNo preparation time active in this world."
+
+  es:
+    errors:
+      no_player: "Este comando solo puede ser ejecutado por un jugador."
+      no_permission: "&cNo tienes permiso para usar este comando."
+    captains:
+      usage: "&cEspecifica almenos 2 jugadores que serán capitanes."
+      no_settings: "&cNo se ha encontrado el archivo. Asegúrate de estar en un juego."
+      error: "&cError al guardar el archivo."
+      success: "&aCapitanes actualizados."
+    instances:
+      usage: "&cEspecifica un número válido."
+      set: "&aSe han configurado: {instances} instancias."
+      error: "&cError al guardar las instancias."
+    region:
+      usage: "&cIngresa un número válido."
+      timerSet: "&aTimer configurado a &e{timer}&a minutos."
+      hasteSet: "&aTimer de Haste configurado a &e{timer} &aminutos."
+      worldAlreadyAdded: "&aEl mundo ya está configurado."
+      worldError: "&cEste mundo no está configurado. Usa &e/region add&c primero."
+      worldSuccess: "&aSe ha añadido el mundo a con valores por defecto."
+      worldDeleted: "&aMundo eliminado."
+      WorldsNotFound: "&cNo hay mundos configurados. Usa &e/region add&c primero."
+      header: "&eMundos configurados y sus detalles:"
+      minSet: "&aCoordenadas mínimas configuradas. [X: {x}, Y: {y}, Z: {z}]"
+      maxSet: "&aCoordenadas máximas configuradas [X: {x} Y: {y}, Z: {z}]."
+    language:
+      set: "&aIdioma cambiado a Español."
+    update:
+      start: "§8[§bRegionPlugin§8] &aVerificando si hay actualizaciones disponibles..."
+      no_updates: "§8[§bRegionPlugin§8] &cNo hay actualizaciones disponibles"
+      found: "§8[§bRegionPlugin§8] &aSe ha encontrado una nueva actualización Actualiza ahora."
+    reload:
+      start: "§8[§bRegionPlugin§8] &aRecargando el plugin..."
+      success: "§8[§bRegionPlugin§8] &aEl plugin se ha recargado correctamente."
+    messages:
+      reloadStart: "§8[§bRegionPlugin§8] &aRecargando los mensajes..."
+      reloadError: "§8[§bRegionPlugin§8] &cError al recargar los mensajes."
+      reloadSuccess: "§8[§bRegionPlugin§8] &aLos mensajes se han recargado correctamente."
+    configReplace:
+      start: "§8[§bRegionPlugin§8] §aDescargando el archivo de configuración..."
+      error: "§8[§bRegionPlugin§8] §cError al descargar el archivo de configuración."
+      success: "§8[§bRegionPlugin§8] §aArchivos descargado correctamente."
+    tables:
+      usage: "&cEspecifica una tabla válida."
+      error: "&cError al guardar la tabla."
+      success: "&aTablas configuradas: {tables}"
+    tournament:
+      usage: "&cNumero inválido. Usa /torneo lista para ver los números válidos."
+      empty: "&cNo hay torneos configurados."
+      list: "&aComandos configurados:"
+      finishList: "&aComandos configurados al finalizar el tiempo de preparación:"
+      add: "&aComando añadido: {command}"
+      delete: "&aComando eliminado: {command}"
+      noTimer: "&cNo se ha encontrado el tiempo de preparación en el archivo de configuración, usando el valor predeterminado de {mins} minutos."
+      noHaste: "&cNo se ha encontrado el tiempo de haste en el archivo de configuración, usando el valor predeterminado de {mins} minutos."
+      start: "&aComandos configurados"
+      defaultTimer: "&cTiempo de preparación no configurado. Usando el valor predeterminado."
+      defaultHaste: "&cTiempo de haste no configurado. Usando el valor predeterminado."
+    preparation:
+      alreadyStarted: "&cLa protección ya está activa en este mundo."
+      notStarted: "&cNo hay tiempo de preparación activo en este mundo."
+
+

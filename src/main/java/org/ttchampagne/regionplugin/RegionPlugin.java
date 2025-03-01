@@ -8,6 +8,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.ChatColor;
 import org.ttchampagne.regionplugin.commands.CapitanesCommand;
 import org.ttchampagne.regionplugin.commands.ListaCommand;
 import org.ttchampagne.regionplugin.commands.TorneoCommand;
@@ -17,15 +18,18 @@ import org.ttchampagne.regionplugin.commands.InstancesCommand;
 import org.ttchampagne.regionplugin.listeners.TorneoListeners;
 import org.ttchampagne.regionplugin.commands.RegionPluginCommand;
 import org.ttchampagne.regionplugin.commands.RegionCommand;
-import org.ttchampagne.regionplugin.commands.MapCommand;
 
 import java.io.File;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 public class RegionPlugin extends JavaPlugin {
 
+    private YamlConfiguration languageConfig; // Configuración de idioma
     private final Map<String, Region> regions = new HashMap<>(); // Mapa para almacenar las regiones definidas
     public static boolean privadoActivado; // Variable para almacenar el estado del modo privado
     public static String mundoPrivado; // Variable para almacenar el mundo donde se activó el modo privado
@@ -51,10 +55,12 @@ public class RegionPlugin extends JavaPlugin {
     );
     @Override
     public void onEnable() {
+        
         // Cargar el archivo de configuración predeterminado
         saveDefaultConfig();
-        // Cargar las regiones definidas en el config.yml
+        // Cargar las regiones definidas en el config.yml e idioma
         loadRegions();
+        loadLanguage();
         // Crear una instancia del listener que manejará la lógica de protección y comandos
         Bukkit.getPluginManager().registerEvents(torneoListeners, this);
         // Crear instancia del listener
@@ -68,7 +74,6 @@ public class RegionPlugin extends JavaPlugin {
         getCommand("tabla").setExecutor(new TablaCommand(this));
         getCommand("instances").setExecutor(new InstancesCommand(this));
         getCommand("lista").setExecutor(new ListaCommand(this));
-        getCommand("map").setExecutor(new MapCommand());
         this.getCommand("region").setExecutor(new RegionCommand(this));
         this.getCommand("RegionPlugin").setExecutor(new RegionPluginCommand(this));
         // Reinicio inicial de variables
@@ -77,6 +82,34 @@ public class RegionPlugin extends JavaPlugin {
         // Cargar Messages.yml
         saveDefaultMessages();
     }
+
+    // Método para cargar el archivo de idioma
+    private void loadLanguage() {
+        InputStream languageStream = getResource("language.yml");
+        if (languageStream == null) {
+            getLogger().warning("No se pudo cargar el archivo de idioma.");
+            return;
+        }
+        languageConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(languageStream, StandardCharsets.UTF_8));
+    }
+    // Obtener el idioma global del servidor desde config.yml
+    private String getServerLanguage() {
+        return getConfig().getString("language", "es"); // Por defecto en español
+    }
+
+    // Obtener el mensaje de error desde language.yml en el idioma seleccionado
+    public String getErrorMessage(String key) {
+        String language = getServerLanguage();  // Obtener el idioma global del servidor
+        return ChatColor.translateAlternateColorCodes('&',
+                languageConfig.getString("messages." + language + "." + key));
+    }
+
+    // Obtener mensajes configurables desde messages.yml
+    public String getConfigurableMessage(String key) {
+        return ChatColor.translateAlternateColorCodes('&',
+                getConfig().getString("messages." + key));
+    }
+
     // Método para cargar las regiones desde el archivo de configuración
     public void loadRegions() {
         // Obtener el archivo de configuración
@@ -97,6 +130,7 @@ public class RegionPlugin extends JavaPlugin {
             }
         }
     }
+    
     // Método para convertir una cadena de ubicación en un objeto Location
     private Location parseLocation(String worldName, String locString) {
         String[] parts = locString.replace("(", "").replace(")", "").split(",");
@@ -106,6 +140,7 @@ public class RegionPlugin extends JavaPlugin {
                 Double.parseDouble(parts[1]),
                 Double.parseDouble(parts[2]));
     }
+
     // Método para obtener el mapa de regiones
     public Map<String, Region> getRegions() {
         return regions;

@@ -1,13 +1,13 @@
 package org.ttchampagne.regionplugin.commands;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,29 +21,25 @@ public class CapitanesCommand implements CommandExecutor {
     public CapitanesCommand(RegionPlugin plugin) {
         this.plugin = plugin;
     }
-
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("capitanes")) {
             // Verificar que el sender sea un jugador
             if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.no_player")));
+                sender.sendMessage(plugin.getErrorMessage("errors.no_player"));
                 return true;
             }
-            Player player = (Player) sender;
 
+            Player player = (Player) sender;
             // Verificar permisos
             if (!(player.hasPermission("towers.admin") || player.isOp())) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.no_permission")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("errors.no_permission"));
                 return true;
             }
 
             // Verificar cantidad de argumentos
             if (args.length < 2) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_specify_players")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.usage"));
                 return true;
             }
 
@@ -57,8 +53,7 @@ public class CapitanesCommand implements CommandExecutor {
 
             // Verificar existencia del archivo
             if (!gameSettingsFile.exists()) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_file_not_found")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.no_settings"));
                 return true;
             }
 
@@ -68,16 +63,14 @@ public class CapitanesCommand implements CommandExecutor {
 
             try {
                 config.save(gameSettingsFile);
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_updated")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.success"));
 
                 // Ejecutar comando para recargar configuración
                 String reloadCommand = String.format("tt reloadconfig game_settings %s", worldName);
                 player.performCommand(reloadCommand);
 
             } catch (IOException e) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_save_error")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.error"));
                 e.printStackTrace();
             }
             return true;

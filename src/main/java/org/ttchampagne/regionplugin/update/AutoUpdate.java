@@ -5,6 +5,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.ttchampagne.utils.SendMessage;
 
 public class AutoUpdate {
 
@@ -38,43 +39,36 @@ public class AutoUpdate {
                 String latestVersion = parseVersionFromJson(response);
                 if (latestVersion == null) {
                     plugin.getLogger().severe("No se pudo obtener la última versión del JSON.");
-                    notifyAdmins("§8[§bRegionPlugin§8] §cError.");
+                    SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §cError.");
                     return;
                 }
 
                 if (compareVersions(currentVersion, latestVersion) >= 0) {
                     // Si la versión actual es igual o mayor que la última
                     plugin.getLogger().info("RegionPlugin is up to date.");
-                    notifyAdmins("§8[§bRegionPlugin§8] §aUp to date.");
+                    SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §aUp to date.");
                 } else {
                     plugin.getLogger().info("New version available: " + latestVersion);
-                    notifyAdmins("§8[§bRegionPlugin§8] §eNew version available: " + latestVersion);
+                    SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §eNew version available: " + latestVersion);
 
                     String downloadUrl = parseDownloadUrlFromJson(response);
                     if (downloadUrl == null) {
                         plugin.getLogger().severe("URL error.");
-                        notifyAdmins("§8[§bRegionPlugin§8] §cError.");
+                        SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §cError.");
                         return;
                     }
 
                     // Descargar la nueva versión
-                    notifyAdmins("§8[§bRegionPlugin§8] §eDownloading...");
+                    SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §eDownloading...");
                     downloadNewVersion(downloadUrl);
-                    plugin.getLogger().info("Nueva versión descargada. Notificando a los administradores...");
-                    notifyAdmins("§8[§bRegionPlugin§8] §aDownloaded. Restart the server.");
+                    plugin.getLogger().info("Nueva versión descargada.");
+                    SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §aDownloaded. Restart the server.");
                 }
             } catch (Exception e) {
                 plugin.getLogger().severe("Error verificando actualizaciones: " + e.getMessage());
-                notifyAdmins("§8[§bRegionPlugin§8] §cError.");
+                SendMessage.sendToAdmins("§8[§bRegionPlugin§8] §cError.");
             }
         });
-    }
-
-    private void notifyAdmins(String message) {
-        // Notificar a todos los jugadores con el permiso `towers.admin`
-        Bukkit.getOnlinePlayers().stream()
-                .filter(player -> player.hasPermission("towers.admin"))
-                .forEach(player -> player.sendMessage(message));
     }
 
     private String parseVersionFromJson(String json) {

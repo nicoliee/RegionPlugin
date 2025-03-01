@@ -62,7 +62,7 @@ public class TorneoListeners implements Listener{
         if (region != null && region.isInside(event.getBlock().getLocation())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
-            plugin.getMessagesConfig().getString("messages.preparation_block_place")));
+            plugin.getMessagesConfig().getString("messages.preparation.block_place")));
             event.getPlayer().playSound(event.getPlayer().getLocation(), "tile.piston.out", 1.0f, 1.0f);
         }
     }
@@ -78,7 +78,7 @@ public class TorneoListeners implements Listener{
         if (region != null && region.isInside(event.getBlock().getLocation())) {
             event.setCancelled(true);
             event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
-            plugin.getMessagesConfig().getString("messages.preparation_block_break")));
+            plugin.getMessagesConfig().getString("messages.preparation.block_break")));
             event.getPlayer().playSound(event.getPlayer().getLocation(), "tile.piston.out", 1.0f, 1.0f);
         }
     }
@@ -124,7 +124,7 @@ public class TorneoListeners implements Listener{
                         player.getInventory().clear();
                         player.setGameMode(GameMode.SPECTATOR);
                         event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&', 
-                        plugin.getMessagesConfig().getString("messages.privatemode_warning")));
+                        plugin.getMessagesConfig().getString("messages.privateMode")));
                         player.performCommand("lista");
                     }
                 }
@@ -136,6 +136,10 @@ public class TorneoListeners implements Listener{
     public void onWorldLoad(WorldLoadEvent event){
         String worldName = event.getWorld().getName();
         privateModeMap.put(worldName, false); // Desactivar el modo privado
+        worldProtectionStatus.put(worldName, false);
+        protectionTimeRemaining.put(worldName, 0);
+        regenerationTimerRemaining.put(worldName, 0);
+        hasteTimerRemaining.put(worldName, 0);
     }
 
     // Verificar si el jugador tiene armadura de cuero
@@ -154,8 +158,7 @@ public class TorneoListeners implements Listener{
     // Iniciar la protección de bloques
     public void startProtectionTimer(final String worldName, Player player, int preparationTime, int hasteTime) {
         if (protectionTimers.containsKey(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.preparation_already_started")));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("preparation.alreadyStarted"));
             return;
         }
         worldProtectionStatus.put(worldName, true);
@@ -181,13 +184,13 @@ public class TorneoListeners implements Listener{
                         // Si el tiempo es divisible dentro de 60 y es mayor a 0 mostrará un mensaje con el tiempo faltante
                         int minutesRemaining = timeRemaining / 60;
                         SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
-                        .getString("messages.preparation_minutes_left")
+                        .getString("messages.preparation.minutes_left")
                         .replace("{minutes}", String.valueOf(minutesRemaining)));
                         SendMessage.soundToWorld(worldName, sound);
                     } else if (timeRemaining == 30 || timeRemaining == 10 || (timeRemaining <= 5 && timeRemaining >= 1)) {
                         // Si el tiempo restante son 30, 10, 5, 4, 3, 2, 1 segundos mostrará un mensaje
                         SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
-                        .getString("messages.preparation_seconds_left")
+                        .getString("messages.preparation.seconds_left")
                         .replace("{seconds}", String.valueOf(timeRemaining)));
                     } if (timeRemaining <= 30) {
                         // Reproducir un sonido de alerta si el tiempo restante es menor o igual a 30 segundos
@@ -200,7 +203,7 @@ public class TorneoListeners implements Listener{
                     protectionTimers.remove(worldName);
                     protectionTimeRemaining.remove(worldName); // Limpiar el tiempo restante
                     SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
-                    .getString("messages.preparation_ended"));
+                    .getString("messages.preparation.ended"));
                     for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
                         if (onlinePlayer.getWorld().getName().equals(worldName)) {
                             Sound sound;
@@ -215,7 +218,7 @@ public class TorneoListeners implements Listener{
                             onlinePlayer.playSound(onlinePlayer.getLocation(), sound, 0.5f, 1.0f);
                         }
                     }                    
-                    Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation_ended")));
+                    Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation.ended")));
                     this.cancel();
                 }
                 // Si ya pasaron {haste} segundos, dejar de aplicar Haste II
@@ -229,12 +232,7 @@ public class TorneoListeners implements Listener{
         task.runTaskTimer(plugin, 0, 20); // Ejecutar el timer cada segundo
         protectionTimers.put(worldName, task);
         int preparationTimeinMinutes = preparationTime / 60;
-        Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
-                        .getString("messages.preparation_started")
-                        .replace("{minutes}", String.valueOf(preparationTimeinMinutes))));
-                        SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
-                        .getString("messages.preparation_started")
-                        .replace("{minutes}", String.valueOf(preparationTimeinMinutes)));
+        SendMessage.sendToWorld(worldName, plugin.getMessagesConfig().getString("messages.preparation.start").replace("{minutes}", String.valueOf(preparationTimeinMinutes)));
     }
 
     // Detener la protección de bloques
@@ -249,12 +247,9 @@ public class TorneoListeners implements Listener{
             removeHasteEffect(worldName); // Eliminar el efecto de Haste II
             executeFinishCommands(worldName); // Ejecutar comandos al terminar el tiempo de preparación
             SendMessage.sendToWorld(worldName, plugin.getMessagesConfig()
-                    .getString("messages.preparation_cancelled"));
-                    Bukkit.getLogger().info("&8[&7"  + worldName + "&8] " + ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig()
-                    .getString("messages.preparation_cancelled")));
+                    .getString("messages.preparation.cancelled"));
         } else {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-            ChatColor.translateAlternateColorCodes('&',plugin.getMessagesConfig().getString("messages.preparation_cancelled_error"))));
+            SendMessage.sendToPlayer(player, plugin.getErrorMessage("preparation.notStarted"));
         }
     }
 

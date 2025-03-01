@@ -3,7 +3,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.command.Command;
@@ -23,11 +22,10 @@ public class ListaCommand implements CommandExecutor {
     // si el comando ingresado es /lista
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         // Verificar que el sender sea un jugador
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.no_player")));
-                return true;
-            }
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(plugin.getErrorMessage("errors.no_player"));
+            return true;
+        }
         if (command.getName().equalsIgnoreCase("lista")) {
             if (sender instanceof Player) {
                 Player player = (Player) sender;

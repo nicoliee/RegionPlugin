@@ -1,17 +1,21 @@
 package org.ttchampagne.regionplugin.commands;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 
-public class MapCommand implements CommandExecutor, TabCompleter {
+public class MapCommand implements CommandExecutor {
+    private final RegionPlugin plugin;
+
+    public MapCommand(RegionPlugin plugin) {
+        this.plugin = plugin;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -19,7 +23,8 @@ public class MapCommand implements CommandExecutor, TabCompleter {
             return false;
         }
         if (!(sender instanceof Player)) {
-            return false;
+            sender.sendMessage(plugin.getErrorMessage("errors.no_player"));
+            return true;
         }
         String mapName = args[0];
         Player player = (Player) sender;
@@ -52,41 +57,7 @@ public class MapCommand implements CommandExecutor, TabCompleter {
                 }
             }
         }
-        // Si no se encuentra ninguna instancia con name: mini
-        player.sendMessage("No se encontró ninguna instancia con nombre " + mapName);
-    }
-
-    @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
-        List<String> suggestions = new ArrayList<>();
-        
-        if (args.length == 1) {
-            // Obtener la carpeta donde están los mundos, en este caso "AmazingTowers/instances"
-            File instancesDirectory = new File("plugins/AmazingTowers/instances");
-            
-            // Recorrer todas las carpetas dentro de la carpeta "instances"
-            for (File worldFolder : instancesDirectory.listFiles()) {
-                if (worldFolder.isDirectory()) {
-                    // Obtener el archivo config.yml de cada carpeta
-                    File configFile = new File(worldFolder, "config.yml");
-                    
-                    if (configFile.exists()) {
-                        // Leer el archivo YAML (aquí se usaría un parser YAML como SnakeYAML)
-                        YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-                        
-                        // Verificar si existe la clave "name"
-                        if (config.contains("name")) {
-                            String mapName = config.getString("name");
-                            // Agregar el nombre del mapa a la lista de sugerencias
-                            if (mapName != null) {
-                                suggestions.add(mapName);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        return suggestions;
+        // Si no se encuentra ninguna instancia con name
+        SendMessage.sendToPlayer(player, plugin.getErrorMessage("map.error"));
     }
 }

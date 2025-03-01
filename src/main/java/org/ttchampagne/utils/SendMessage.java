@@ -6,6 +6,11 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 
 public class SendMessage {
+    public static void sendToPlayer(Player player, String message) {
+        String coloredMessage = ChatColor.translateAlternateColorCodes('&', message);
+        player.sendMessage(coloredMessage);
+    }
+    
     public static void sendToWorld(String worldName, String message) {
         World world = Bukkit.getWorld(worldName);
 
@@ -21,17 +26,9 @@ public class SendMessage {
         }
     }
 
-    public static void sendToAdmins(String worldName, String message) {
-        World world = Bukkit.getWorld(worldName);
-
-        if (world == null) {
-            System.out.println("El mundo '" + worldName + "' no existe o no está cargado.");
-            return;
-        }
-
+    public static void sendToAdmins(String message) {
         String coloredMessage = ChatColor.translateAlternateColorCodes('&', message);
-
-        for (Player player : world.getPlayers()) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
             if (player.hasPermission("towers.admin")) {
                 player.sendMessage(coloredMessage);
             }

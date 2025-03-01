@@ -12,6 +12,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 
 public class RerollCommand implements CommandExecutor {
     private final RegionPlugin plugin;
@@ -23,24 +24,21 @@ public class RerollCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (command.getName().equalsIgnoreCase("reroll")) {
             // Verificar que el sender sea un jugador
-            if (!(sender instanceof Player)) {
-                sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.no_player")));
+            if (!sender.hasPermission("towers.admin") && !sender.isOp()) {
+                sender.sendMessage(((RegionPlugin) plugin).getErrorMessage("errors.no_player"));
                 return true;
             }
             Player player = (Player) sender;
 
             // Verificar permisos
             if (!(player.hasPermission("towers.admin") || player.isOp())) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.no_permission")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("errors.no_permission"));
                 return true;
             }
 
             // Verificar cantidad de argumentos
             if (args.length < 2) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_specify_players")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.usage"));
                 return true;
             }
 
@@ -54,8 +52,7 @@ public class RerollCommand implements CommandExecutor {
 
             // Verificar existencia del archivo
             if (!gameSettingsFile.exists()) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_file_not_found")));
+               SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.no_settings"));
                 return true;
             }
 
@@ -76,8 +73,7 @@ public class RerollCommand implements CommandExecutor {
 
 
             } catch (IOException e) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        plugin.getMessagesConfig().getString("messages.captains_save_error")));
+                SendMessage.sendToPlayer(player, plugin.getErrorMessage("captains.saveError"));
                 e.printStackTrace();
             }
             return true;

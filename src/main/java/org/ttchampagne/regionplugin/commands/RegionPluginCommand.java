@@ -19,8 +19,10 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.ttchampagne.regionplugin.RegionPlugin;
 import org.ttchampagne.regionplugin.update.AutoUpdate;
+import org.ttchampagne.utils.SendMessage;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
 public class RegionPluginCommand implements CommandExecutor, TabCompleter {
     private JavaPlugin plugin;
@@ -32,8 +34,7 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         // Verificar si el usuario tiene permisos
         if (!sender.hasPermission("towers.admin") && !sender.isOp()) {
-            sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.no_permission")));
+            sender.sendMessage(((RegionPlugin) plugin).getErrorMessage("errors.no_player"));
             return true;
         }
         // Si el comando es "/RegionPlugin"
@@ -44,34 +45,51 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§8[§bRegionPlugin§8] §7v" + currentVersion);
                 return true;
             // Si el comando es "/regionplugin update"
+            }// Si el comando es "/regionplugin setlang <es/en>"
+            else if (args[0].equalsIgnoreCase("setlang")) {
+                // Verificar que el idioma sea "es" o "en"
+                if (args.length < 2 || (!args[1].equalsIgnoreCase("es") && !args[1].equalsIgnoreCase("en"))) {
+                    sender.sendMessage(ChatColor.RED + "/RegionPlugin setlang <es/en>");
+                    return true;
+                }
+                // Establecer el idioma seleccionado en config.yml
+                String selectedLang = args[1].toLowerCase();
+                plugin.getConfig().set("language", selectedLang); // Actualiza el idioma en config.yml
+                plugin.saveConfig(); // Guarda la nueva configuración
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("language.set")); // Mensaje de confirmación
+
+                // Recargar el plugin para aplicar el cambio de idioma
+                plugin.reloadConfig(); // Recarga el archivo de configuración
+
+                return true;
             } else if (args[0].equalsIgnoreCase("update")) {
                 String currentVersion = plugin.getDescription().getVersion();
-                sender.sendMessage("§8[§bRegionPlugin§8] §7v" + currentVersion);
+                SendMessage.sendToPlayer((Player) sender, "§8[§bRegionPlugin§8] §7v" + currentVersion);
                 AutoUpdate updateChecker = new AutoUpdate(plugin);
                 updateChecker.checkForUpdates();
                 return true;
             // Si el comando es "/regionplugin reload"
             } else if (args[0].equalsIgnoreCase("reload")) {
-                sender.sendMessage("§8[§bRegionPlugin§8] §7Reloading...");
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("reload.start"));
                 plugin.getServer().getPluginManager().disablePlugin(plugin);
                 plugin.getServer().getPluginManager().enablePlugin(plugin);
-                sender.sendMessage("§8[§bRegionPlugin§8] §7Reloaded.");
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("reload.success"));
                 return true;
             // Si el comando es "/regionplugin messagesreload"
             } else if (args[0].equalsIgnoreCase("messagesreload")) {
                 File messagesFile = new File(plugin.getDataFolder(), "messages.yml");
-                sender.sendMessage("§8[§bRegionPlugin§8] §eStarting the messages reset process...");
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("messages.reloadStart"));
                 if (messagesFile.exists() && !messagesFile.delete()) {
-                    sender.sendMessage("§8[§bRegionPlugin§8] §cFailed to delete the messages file.");
+                    SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("messages.reloadError"));
                     return true;
                 }
                 plugin.saveResource("messages.yml", false);
                 ((RegionPlugin) plugin).saveDefaultMessages();
-                sender.sendMessage("§8[§bRegionPlugin§8] §aMessages have been successfully reset and reloaded.");
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("messages.reloadSuccess"));
                 return true;
             // Si el comando es "/regionplugin configreplace"
             } else if (args[0].equalsIgnoreCase("configreplace")) {
-                sender.sendMessage("§8[§bRegionPlugin§8] §eDownloading and extracting the configuration files...");
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("configReplace.start"));
                 String zipFileUrl = "https://github.com/nicoliee/configForTowers/archive/refs/heads/main.zip";
                 File pluginsFolder = new File("plugins");
                 try {
@@ -80,16 +98,16 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
                     new File(pluginsFolder, "configForTowers.zip").delete();
                 } catch (IOException e) {
                     e.printStackTrace();
-                    sender.sendMessage("§8[§bRegionPlugin§8] §cFailed to download and extract the configuration files.");
+                    SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("configReplace.error"));
                     return true;
                 }
-                sender.sendMessage("§8[§bRegionPlugin§8] §aThe configuration files have been successfully downloaded and extracted.");
+                SendMessage.sendToPlayer((Player) sender, ((RegionPlugin) plugin).getErrorMessage("configReplace.success"));
                 return true;
             }else if (args[0].equalsIgnoreCase("serverStop")) {
                 plugin.getServer().shutdown();
                 return true;
             } else {
-                sender.sendMessage(ChatColor.RED + "Use /RegionPlugin <configreplace|messagesreload|reload|update>");
+                sender.sendMessage(ChatColor.RED + "/RegionPlugin <configreplace|messagesreload|reload|setlang|update>");
                 return true;
             }
         }        
@@ -150,7 +168,7 @@ public class RegionPluginCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             // Lista de opciones posibles
-            List<String> options = Arrays.asList("configReplace", "messagesReload", "reload", "update", "serverStop");
+            List<String> options = Arrays.asList("configReplace", "messagesReload", "reload", "serverStop", "setLang", "update");
 
             // Filtrar las opciones que comienzan con el texto ingresado por el usuario
             String input = args[0].toLowerCase();

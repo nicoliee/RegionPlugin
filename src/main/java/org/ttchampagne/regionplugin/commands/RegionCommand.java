@@ -15,9 +15,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.ttchampagne.regionplugin.RegionPlugin;
+import org.ttchampagne.utils.SendMessage;
 import org.ttchampagne.regionplugin.Region;
+
 public class RegionCommand implements CommandExecutor, TabCompleter{
     private final JavaPlugin plugin;
+    
     public RegionCommand(JavaPlugin plugin) {
         this.plugin = plugin;
     }
@@ -25,8 +28,7 @@ public class RegionCommand implements CommandExecutor, TabCompleter{
     @Override
 public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
     if (!(sender instanceof Player)) {
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.no_player")));
+        sender.sendMessage(((RegionPlugin) plugin).getErrorMessage("errors.no_player"));
         return true;
     }
 
@@ -36,15 +38,12 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
     FileConfiguration config = plugin.getConfig();
 
     if (!player.hasPermission("towers.admin")) {
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.no_permission")));
+        SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("errors.no_permission"));
         return true;
     }
     
     if (args.length == 0) {
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                ((RegionPlugin) plugin).getMessagesConfig().getString("messages.help_header")));
-                player.sendMessage(ChatColor.RED + " /region <add|min|max|delete|timer>");
+                player.sendMessage(ChatColor.RED + " /region <add|delete|haste|help|list|max|min|timer>");
         return true;
     }
 
@@ -55,8 +54,7 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
 
         case "min":
         if (!config.contains(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldError"));
         }
         if (args.length == 4) {
             try {
@@ -73,14 +71,12 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
                 }
 
                 plugin.saveConfig(); // Guardar la configuración en el archivo
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_min_coords_set"))
+                SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.minSet")
                         .replace ("{x}", String.valueOf(x))
                         .replace ("{y}", String.valueOf(y))
                         .replace ("{z}", String.valueOf(z)));
             } catch (NumberFormatException e) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_invalid_number")));
+                SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.usage"));
             }
         } else {
             player.sendMessage(ChatColor.RED + "/region min <x> <y> <z>");
@@ -89,8 +85,7 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
 
     case "max":
         if (!config.contains(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldError"));
         }
         if (args.length == 4) {
             try {
@@ -106,14 +101,12 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
                     region.setP2(new Location(player.getWorld(), x, y, z));
                 }
                 plugin.saveConfig(); // Guardar la configuración en el archivo
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_max_coords_set"))
+                SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.maxSet")
                         .replace ("{x}", String.valueOf(x))
                         .replace ("{y}", String.valueOf(y))
                         .replace ("{z}", String.valueOf(z)));
             } catch (NumberFormatException e) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_invalid_number")));
+                SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.usage"));
             }
         } else {
             player.sendMessage(ChatColor.RED + "/region max <x> <y> <z>");
@@ -141,8 +134,6 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
             break;
 
         default:
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.help_header")));
                     player.sendMessage(ChatColor.RED + "/region <add|delete|haste|help|list|max|min|timer>");
     }
     return true;
@@ -169,8 +160,7 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
 
     private void handleAddCommand(Player player, FileConfiguration config, String worldName) {
     if (config.contains(worldName)) {
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_add_world_already_configured")));
+        SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldAlreadyAdded"));
         return;
     }
 
@@ -180,8 +170,7 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
     config.set(worldName + ".Haste", 1);
     plugin.saveConfig();
 
-    player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-            ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_add_world_added")));
+    SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldSuccess"));
     }
 
     private void setCoordinates(FileConfiguration config, Player player, String worldName, String key, int x, int y, int z) {
@@ -193,22 +182,19 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
 
     private void handleDeleteCommand(Player player, FileConfiguration config, String worldName) {
         if (!config.contains(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldError"));
             return;
         }
     
         config.set(worldName, null);
         plugin.saveConfig();
     
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_delete_world_deleted")));
+        SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldDeleted"));
     }
 
     private void handleTimerCommand(Player player, FileConfiguration config, String worldName, String[] args) {
         if (!config.contains(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldError"));
             return;
         }
     
@@ -220,26 +206,23 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
         try {
             int timer = Integer.parseInt(args[1]);
             if (timer <= 0) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_invalid_number")));
+                SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.usage"));
                 return;
             }
     
             config.set(worldName + ".Timer", timer);
             plugin.saveConfig();
     
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_timer_set_success").replace("{timer}", String.valueOf(timer))));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.timerSet")
+                    .replace("{timer}", String.valueOf(timer)));
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_invalid_number")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.usage"));
         }
     }
 
     private void handleHasteCommand(Player player, FileConfiguration config, String worldName, String[] args) {
         if (!config.contains(worldName)) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_world_not_configured")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.worldError"));
             return;
         }
     
@@ -251,34 +234,30 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
         try {
             int haste = Integer.parseInt(args[1]);
             if (haste <= 0) {
-                player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                        ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_invalid_number")));
+                SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.usage"));
                 return;
             }
     
             config.set(worldName + ".Haste", haste);
             plugin.saveConfig();
-    
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_haste_set_success").replace("{haste}", String.valueOf(haste))));
+            
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.hasteSet")
+                    .replace("{timer}", String.valueOf(haste)));
         } catch (NumberFormatException e) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_invalid_number")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.usage"));
         }
     }
 
     private void handleListCommand(Player player, FileConfiguration config) {
         if (config.getKeys(false).isEmpty()) {
-            player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.regionno_configured_worlds")));
+            SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.WorldsNotFound"));
             return;
         }
     
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.region_configured_worlds_header")));
+        SendMessage.sendToPlayer(player, ((RegionPlugin) plugin).getErrorMessage("region.header"));
         for (String worldName : config.getKeys(false)) {
             // Ignorar claves que no sean mundos configurados
-            if (worldName.equalsIgnoreCase("commands")) {
+            if (worldName.equalsIgnoreCase("language")||worldName.equalsIgnoreCase("commands")|| worldName.equalsIgnoreCase("finishCommands")) {
                 continue;
             }
             
@@ -296,8 +275,6 @@ public boolean onCommand(CommandSender sender, Command command, String label, St
         }
     }
     private void handleHelpCommand(Player player){
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    ((RegionPlugin) plugin).getMessagesConfig().getString("messages.help_header")));
         player.sendMessage(" " + ChatColor.YELLOW + "/region add " + ChatColor.GRAY + "- Añadir un mundo al archivo config.yml");
         player.sendMessage(" " + ChatColor.YELLOW + "/region delete " + ChatColor.GRAY + "- Eliminar la configuración de un mundo");
         player.sendMessage(" " + ChatColor.YELLOW + "/region haste <minutos> " + ChatColor.GRAY + "- Configurar el temporizador de haste");
