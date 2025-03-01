@@ -7,6 +7,9 @@ import org.bukkit.entity.Player;
 
 public class SendMessage {
     public static void sendToPlayer(Player player, String message) {
+        if (player == null) {
+            return;
+        }
         String coloredMessage = ChatColor.translateAlternateColorCodes('&', message);
         player.sendMessage(coloredMessage);
     }
@@ -18,7 +21,7 @@ public class SendMessage {
             System.out.println("El mundo '" + worldName + "' no existe o no está cargado.");
             return;
         }
-
+        
         String coloredMessage = ChatColor.translateAlternateColorCodes('&', message);
 
         for (Player player : world.getPlayers()) {

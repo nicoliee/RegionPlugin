@@ -136,10 +136,7 @@ public class TorneoListeners implements Listener{
     public void onWorldLoad(WorldLoadEvent event){
         String worldName = event.getWorld().getName();
         privateModeMap.put(worldName, false); // Desactivar el modo privado
-        worldProtectionStatus.put(worldName, false);
-        protectionTimeRemaining.put(worldName, 0);
-        regenerationTimerRemaining.put(worldName, 0);
-        hasteTimerRemaining.put(worldName, 0);
+        stopProtectionTimer(worldName, null);
     }
 
     // Verificar si el jugador tiene armadura de cuero

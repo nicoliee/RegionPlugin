@@ -299,5 +299,6 @@ public class TorneoCommand implements CommandExecutor, TabCompleter {
         preparationTime = preparationTime * 60 + 1; // Convertir minutos a segundos y sumar 1 segundo
         hasteTime = hasteTime * 60 + 1; // Convertir minutos a segundos y sumar 1 segundo
         torneoListeners.startProtectionTimer(worldName, player, preparationTime, hasteTime); // Iniciar el temporizador de protección
+        player.performCommand("tt timer true");
     }
 }
